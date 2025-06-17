@@ -4,7 +4,6 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 
 @Mixin(AbstractClientPlayerEntity.class)
