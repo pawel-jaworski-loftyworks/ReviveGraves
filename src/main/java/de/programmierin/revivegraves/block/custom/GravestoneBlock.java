@@ -70,7 +70,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                               BlockPos pos,
                               PlayerEntity clicker,
                               BlockHitResult hit) {
-        if (world.isClient) return ActionResult.PASS;
+        if (world.isClient()) return ActionResult.PASS;
 
         BlockEntity be = world.getBlockEntity(pos);
         if (!(be instanceof GravestoneBlockEntity gbe)) {

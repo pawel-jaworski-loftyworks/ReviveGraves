@@ -36,7 +36,9 @@ public class ReviveGraves implements ModInitializer {
 
 		ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
 			if (!(entity instanceof ServerPlayerEntity player)) return;
-			World raw = player.getWorld();
+
+			World raw = player.getEntityWorld();
+
 			if (!(raw instanceof ServerWorld world)) return;
 			double px = player.getX(), pz = player.getZ();
 			BlockPos deathPos;
@@ -70,7 +72,7 @@ public class ReviveGraves implements ModInitializer {
 
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) -> {
 			if (state.getBlock() instanceof GravestoneBlock) {
-				if (!world.isClient) {
+				if (!world.isClient()) {
 					player.sendMessage(Text.literal("Dieser Grabstein ist unzerstörbar!"), false);
 				}
 				return false;

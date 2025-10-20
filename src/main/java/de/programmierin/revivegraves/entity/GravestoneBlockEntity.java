@@ -46,7 +46,7 @@ public class GravestoneBlockEntity extends BlockEntity {
                 .getPlayerManager()
                 .getPlayer(owner);
         if (player == null) return;
-        String name = player.getGameProfile().getName();
+        String name = player.getGameProfile().name();
 
         NbtCompound tag = new NbtCompound();
         tag.putString("id", "minecraft:armor_stand");
