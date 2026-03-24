@@ -2,6 +2,7 @@ package de.programmierin.revivegraves.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
+import de.programmierin.revivegraves.ghost.GhostChickenState;
 import de.programmierin.revivegraves.item.ModItems;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -88,7 +89,8 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                 .getPlayerManager()
                 .getPlayer(ownerUuid);
 
-        if (dead != null && dead.interactionManager.getGameMode() == GameMode.SPECTATOR) {
+        GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) world).getServer());
+        if (dead != null && ghostState.isGhost(dead.getUuid())) {
 
             // Check for revive token first
             ItemStack main = clicker.getMainHandStack();
@@ -119,6 +121,14 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             } else {
                 off.decrement(1);
             }
+
+            // Remove ghost chicken state (effects, invisibility, speed modifier, tab list)
+            GhostChickenState.removeGhostState(dead);
+            ghostState.removeGhost(dead.getUuid());
+
+            // Force entity tracker refresh so other clients see a player again (not chicken)
+            serverWorld.getChunkManager().unloadEntity(dead);
+            serverWorld.getChunkManager().loadEntity(dead);
 
             // Restore original game mode
             GameMode originalMode = gbe.getOriginalGameMode();
