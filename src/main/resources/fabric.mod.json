@@ -24,6 +24,7 @@
 			"de.programmierin.revivegraves.ReviveGravesDataGenerator"
 		]
 	},
+	"accessWidener": "revivegraves.accesswidener",
 	"mixins": [
 		"revivegraves.mixins.json"
 	],
