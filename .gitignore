@@ -32,6 +32,12 @@ bin/
 
 run/
 
+# claude code
+
+.claude/
+CLAUDE.md
+.superpowers/
+
 # java
 
 hs_err_*.log
