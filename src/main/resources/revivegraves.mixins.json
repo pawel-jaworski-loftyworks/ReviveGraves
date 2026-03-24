@@ -3,7 +3,9 @@
 	"package": "de.programmierin.revivegraves.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"EntityTrackerEntryMixin"
+		"EntityTrackerEntryMixin",
+		"PlayerListS2CPacketAccessor",
+		"ServerPlayNetworkHandlerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

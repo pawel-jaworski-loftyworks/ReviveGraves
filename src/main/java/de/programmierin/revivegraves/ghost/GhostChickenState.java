@@ -7,6 +7,8 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -162,6 +164,15 @@ public class GhostChickenState extends PersistentState {
                     SPEED_MODIFIER_ID, GHOST_SPEED_MODIFIER, EntityAttributeModifier.Operation.ADD_VALUE
             ));
         }
+
+        // Remove ghost from all clients' tab lists
+        MinecraftServer server = player.getEntityWorld().getServer();
+        if (server != null) {
+            PlayerRemoveS2CPacket removePacket = new PlayerRemoveS2CPacket(List.of(player.getUuid()));
+            for (ServerPlayerEntity onlinePlayer : server.getPlayerManager().getPlayerList()) {
+                onlinePlayer.networkHandler.sendPacket(removePacket);
+            }
+        }
     }
 
     /**
@@ -174,6 +185,15 @@ public class GhostChickenState extends PersistentState {
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(SPEED_MODIFIER_ID);
+        }
+
+        // Re-add player to all clients' tab lists
+        MinecraftServer server = player.getEntityWorld().getServer();
+        if (server != null) {
+            PlayerListS2CPacket addPacket = PlayerListS2CPacket.entryFromPlayer(List.of(player));
+            for (ServerPlayerEntity onlinePlayer : server.getPlayerManager().getPlayerList()) {
+                onlinePlayer.networkHandler.sendPacket(addPacket);
+            }
         }
     }
 
