@@ -7,6 +7,12 @@
 		"PlayerListS2CPacketAccessor",
 		"ServerPlayNetworkHandlerMixin"
 	],
+	"client": [
+		"client.EntityRenderManagerAccessor",
+		"client.LivingEntityRendererMixin",
+		"client.PlayerEntityRenderStateMixin",
+		"client.PlayerEntityRendererMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	}
