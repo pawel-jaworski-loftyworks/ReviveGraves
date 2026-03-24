@@ -20,8 +20,11 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
+import de.programmierin.revivegraves.ghost.GhostChickenState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,14 +67,42 @@ public class ReviveGraves implements ModInitializer {
 				gbe.setOriginalGameMode(originalMode);
 				gbe.spawnHologram(world);
 			}
+
+			// Track ghost state and enforce one-gravestone-per-player invariant
+			GhostChickenState ghostState = GhostChickenState.get(world.getServer());
+			GhostChickenState.GraveLocation existingGrave = ghostState.getGravestoneLocation(player.getUuid());
+			if (existingGrave != null) {
+				RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD,
+						Identifier.of(existingGrave.dimension()));
+				ServerWorld graveWorld = world.getServer().getWorld(dimKey);
+				if (graveWorld != null) {
+					graveWorld.removeBlock(existingGrave.pos(), false);
+				}
+			}
+			String dimension = world.getRegistryKey().getValue().toString();
+			ghostState.addGhost(player.getUuid(), dimension, deathPos);
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((ServerPlayerEntity oldPlayer,
 												   ServerPlayerEntity newPlayer,
 												   boolean alive) -> {
 			if (!alive) {
-				newPlayer.changeGameMode(GameMode.SPECTATOR);
+				GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) newPlayer.getEntityWorld()).getServer());
+				if (ghostState.isGhost(newPlayer.getUuid())) {
+					GhostChickenState.applyGhostState(newPlayer);
+				}
 			}
+		});
+
+		// Suppress death for ghost players
+		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
+			if (entity instanceof ServerPlayerEntity player) {
+				GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) player.getEntityWorld()).getServer());
+				if (ghostState.isGhost(player.getUuid())) {
+					return false;
+				}
+			}
+			return true;
 		});
 
 		Registry.register(
