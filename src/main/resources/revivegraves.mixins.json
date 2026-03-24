@@ -2,7 +2,9 @@
 	"required": true,
 	"package": "de.programmierin.revivegraves.mixin",
 	"compatibilityLevel": "JAVA_21",
-	"mixins": [],
+	"mixins": [
+		"EntityTrackerEntryMixin"
+	],
 	"injectors": {
 		"defaultRequire": 1
 	}
