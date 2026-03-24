@@ -3,5 +3,7 @@
   "block.revivegraves.gravestone": "Gravestone",
   "itemGroup.revivegraves": "ReviveGraves",
   "message.revivegraves.gravestone_indestructible": "This gravestone is indestructible!",
-  "message.revivegraves.need_token": "You need a Revive Token to revive this player!"
+  "message.revivegraves.need_token": "You need a Revive Token to revive this player!",
+  "message.revivegraves.ghost_chicken_active": "You are a ghost chicken! Find a teammate to lead them to your gravestone.",
+  "message.revivegraves.ghost_chicken_void": "You fell into the void and were teleported back to your gravestone."
 }

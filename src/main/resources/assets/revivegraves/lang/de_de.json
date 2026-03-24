@@ -3,5 +3,7 @@
   "block.revivegraves.gravestone": "Grabstein",
   "itemGroup.revivegraves": "ReviveGraves",
   "message.revivegraves.gravestone_indestructible": "Dieser Grabstein ist unzerstörbar!",
-  "message.revivegraves.need_token": "Du brauchst eine Wiederbelebungsmünze, um diesen Spieler wiederzubeleben!"
+  "message.revivegraves.need_token": "Du brauchst eine Wiederbelebungsmünze, um diesen Spieler wiederzubeleben!",
+  "message.revivegraves.ghost_chicken_active": "Du bist ein Geisterhühnchen! Finde einen Mitspieler und führe ihn zu deinem Grabstein.",
+  "message.revivegraves.ghost_chicken_void": "Du bist in die Leere gefallen und wurdest zu deinem Grabstein teleportiert."
 }

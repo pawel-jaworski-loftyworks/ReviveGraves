@@ -3,7 +3,7 @@
 	"id": "revivegraves",
 	"version": "${version}",
 	"name": "ReviveGraves",
-	"description": "Cooperative death mechanics: gravestones, spectator mode, and revive tokens.",
+	"description": "Cooperative death mechanics: gravestones, ghost chickens, and revive tokens.",
 	"authors": [
 		"ProgrammieRIN!"
 	],
