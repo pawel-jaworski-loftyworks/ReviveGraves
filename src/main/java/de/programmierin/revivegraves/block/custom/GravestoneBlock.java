@@ -1,6 +1,7 @@
 package de.programmierin.revivegraves.block.custom;
 
 import com.mojang.serialization.MapCodec;
+import de.programmierin.revivegraves.ReviveGraves;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import de.programmierin.revivegraves.ghost.GhostChickenState;
 import de.programmierin.revivegraves.item.ModItems;
@@ -125,6 +126,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             // Remove ghost chicken state (effects, invisibility, speed modifier, tab list)
             GhostChickenState.removeGhostState(dead);
             ghostState.removeGhost(dead.getUuid());
+            ReviveGraves.clearGhostTickData(dead.getUuid());
 
             // Force entity tracker refresh so other clients see a player again (not chicken)
             serverWorld.getChunkManager().unloadEntity(dead);
