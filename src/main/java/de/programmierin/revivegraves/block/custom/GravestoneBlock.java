@@ -31,7 +31,7 @@ import java.util.UUID;
 
 public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntityProvider {
     public static final MapCodec<GravestoneBlock> CODEC = createCodec(GravestoneBlock::new);
-    private static final VoxelShape SHAPE = Block.createCuboidShape(3.0, 0.0, 3.0, 13.0, 16.0, 13.0);
+    private static final VoxelShape SHAPE = Block.createCuboidShape(2.0, 0.0, 4.0, 14.0, 16.0, 13.0);
 
     public GravestoneBlock(Settings settings) {
         super(settings);

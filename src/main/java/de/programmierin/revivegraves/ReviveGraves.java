@@ -10,6 +10,7 @@ import de.programmierin.revivegraves.block.custom.GravestoneBlock;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import de.programmierin.revivegraves.entity.ModBlockEntities;
 import de.programmierin.revivegraves.item.ModItems;
+import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
@@ -52,10 +53,14 @@ public class ReviveGraves implements ModInitializer {
 			} else {
 				deathPos = findSafePlacement(world, player.getBlockPos());
 			}
-			world.setBlockState(deathPos, ModBlocks.GRAVESTONE.getDefaultState(), 3);
+			world.setBlockState(deathPos,
+				ModBlocks.GRAVESTONE.getDefaultState()
+					.with(HorizontalFacingBlock.FACING, player.getHorizontalFacing()),
+				3);
 			BlockEntity be = world.getBlockEntity(deathPos);
 			if (be instanceof GravestoneBlockEntity gbe) {
 				gbe.setOwner(player.getUuid());
+				gbe.setOwnerName(player.getGameProfile().name());
 				gbe.setOriginalGameMode(originalMode);
 				gbe.spawnHologram(world);
 			}

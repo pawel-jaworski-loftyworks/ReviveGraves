@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 public class GravestoneBlockEntity extends BlockEntity {
     private UUID owner;
+    private String ownerName;
     private UUID hologram;
     private GameMode originalGameMode;
 
@@ -32,6 +33,19 @@ public class GravestoneBlockEntity extends BlockEntity {
     public void setOwner(UUID owner) {
         this.owner = owner;
         markDirty();
+        if (getWorld() != null && !getWorld().isClient()) {
+            getWorld().updateListeners(getPos(), getCachedState(), getCachedState(), 3);
+        }
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName != null && ownerName.length() > 16
+                ? ownerName.substring(0, 16) : ownerName;
+        markDirty();
+    }
+
+    public String getOwnerName() {
+        return ownerName;
     }
 
     public UUID getOwner() {
@@ -62,8 +76,6 @@ public class GravestoneBlockEntity extends BlockEntity {
 
         NbtCompound tag = new NbtCompound();
         tag.putString("id", "minecraft:armor_stand");
-        tag.putString("CustomName", Text.literal(name).toString());
-        tag.putBoolean("CustomNameVisible", true);
         tag.putBoolean("Invisible", true);
         tag.putBoolean("NoGravity", true);
         tag.putBoolean("Invulnerable", true);
@@ -77,13 +89,9 @@ public class GravestoneBlockEntity extends BlockEntity {
         stand.setCustomName(Text.literal(name));
         stand.setCustomNameVisible(true);
 
-        Direction facing = world.getBlockState(getPos()).get(HorizontalFacingBlock.FACING);
-        double offset = 0.25;
-        double dx = -facing.getOffsetX() * offset;
-        double dz = -facing.getOffsetZ() * offset;
-        double x = getPos().getX() + 0.5 + dx;
-        double y = getPos().getY() + 1.1;
-        double z = getPos().getZ() + 0.5 + dz;
+        double x = getPos().getX() + 0.5;
+        double y = getPos().getY() + 0.8;
+        double z = getPos().getZ() + 0.5;
         stand.refreshPositionAndAngles(x, y, z, 0f, 0f);
 
         world.spawnEntity(stand);
@@ -101,6 +109,9 @@ public class GravestoneBlockEntity extends BlockEntity {
         super.writeData(view);
         if (owner != null) {
             view.putString("Owner", owner.toString());
+        }
+        if (ownerName != null) {
+            view.putString("OwnerName", ownerName);
         }
         if (hologram != null) {
             view.putString("Hologram", hologram.toString());
@@ -120,6 +131,9 @@ public class GravestoneBlockEntity extends BlockEntity {
                 ReviveGraves.LOGGER.warn("Invalid Owner UUID in gravestone NBT: {}", u);
             }
         });
+        view.getOptionalString("OwnerName").ifPresent(n ->
+            this.ownerName = n.length() > 16 ? n.substring(0, 16) : n
+        );
         view.getOptionalString("Hologram").ifPresent(u -> {
             try {
                 this.hologram = UUID.fromString(u);
