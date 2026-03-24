@@ -16,6 +16,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.state.StateManager;
+import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -78,6 +79,10 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
         }
 
         UUID ownerUuid = gbe.getOwner();
+        if (ownerUuid == null) {
+            return super.onUse(state, world, pos, clicker, hit);
+        }
+
         ServerPlayerEntity dead = ((ServerWorld) world)
                 .getServer()
                 .getPlayerManager()
@@ -85,12 +90,15 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
 
         if (dead != null && dead.interactionManager.getGameMode() == GameMode.SPECTATOR) {
 
+            // Check for revive token first
             ItemStack main = clicker.getMainHandStack();
             ItemStack off  = clicker.getOffHandStack();
-            if (main.getItem() == ModItems.REVIVE_TOKEN) {
-                main.decrement(1);
-            } else if (off.getItem() == ModItems.REVIVE_TOKEN) {
-                off.decrement(1);
+            boolean hasToken = main.getItem() == ModItems.REVIVE_TOKEN
+                    || off.getItem() == ModItems.REVIVE_TOKEN;
+
+            if (!hasToken) {
+                clicker.sendMessage(Text.translatable("message.revivegraves.need_token"), false);
+                return ActionResult.CONSUME;
             }
 
             ServerWorld serverWorld = (ServerWorld) world;
@@ -100,11 +108,21 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             dead.teleport(
                     serverWorld,
                     x, y, z,
-                    EnumSet.noneOf(PositionFlag.class),  // keine speziellen Rotations-Flags
+                    EnumSet.noneOf(PositionFlag.class),
                     dead.getYaw(), dead.getPitch(),
-                    false                               // onGround = false
+                    false
             );
-            dead.changeGameMode(GameMode.SURVIVAL);
+
+            // Consume token after successful teleport
+            if (main.getItem() == ModItems.REVIVE_TOKEN) {
+                main.decrement(1);
+            } else {
+                off.decrement(1);
+            }
+
+            // Restore original game mode
+            GameMode originalMode = gbe.getOriginalGameMode();
+            dead.changeGameMode(originalMode != null ? originalMode : GameMode.SURVIVAL);
 
             serverWorld.spawnParticles(
                     ParticleTypes.TOTEM_OF_UNDYING,
@@ -123,11 +141,11 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                     1f
             );
 
+            // Remove hologram
             UUID holoId = gbe.getHologram();
             if (holoId != null) {
                 Entity holo = serverWorld.getEntity(holoId);
                 if (holo != null) {
-
                     holo.discard();
                 }
             }
@@ -137,5 +155,20 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
         }
 
         return super.onUse(state, world, pos, clicker, hit);
+    }
+
+    @Override
+    protected void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (be instanceof GravestoneBlockEntity gbe) {
+            UUID holoId = gbe.getHologram();
+            if (holoId != null) {
+                Entity holo = world.getEntity(holoId);
+                if (holo != null) {
+                    holo.discard();
+                }
+            }
+        }
+        super.onStateReplaced(state, world, pos, moved);
     }
 }

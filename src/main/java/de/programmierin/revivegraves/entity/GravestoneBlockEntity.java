@@ -1,5 +1,6 @@
 package de.programmierin.revivegraves.entity;
 
+import de.programmierin.revivegraves.ReviveGraves;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
@@ -14,6 +15,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.GameMode;
 
 import java.util.UUID;
 import java.util.function.Function;
@@ -21,6 +23,7 @@ import java.util.function.Function;
 public class GravestoneBlockEntity extends BlockEntity {
     private UUID owner;
     private UUID hologram;
+    private GameMode originalGameMode;
 
     public GravestoneBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.GRAVESTONE, pos, state);
@@ -37,6 +40,15 @@ public class GravestoneBlockEntity extends BlockEntity {
 
     public UUID getHologram() {
         return hologram;
+    }
+
+    public GameMode getOriginalGameMode() {
+        return originalGameMode;
+    }
+
+    public void setOriginalGameMode(GameMode mode) {
+        this.originalGameMode = mode;
+        markDirty();
     }
 
     public void spawnHologram(ServerWorld world) {
@@ -93,12 +105,34 @@ public class GravestoneBlockEntity extends BlockEntity {
         if (hologram != null) {
             view.putString("Hologram", hologram.toString());
         }
+        if (originalGameMode != null) {
+            view.putString("OriginalGameMode", originalGameMode.name());
+        }
     }
 
     @Override
     protected void readData(net.minecraft.storage.ReadView view) {
         super.readData(view);
-        view.getOptionalString("Owner").ifPresent(u -> this.owner = UUID.fromString(u));
-        view.getOptionalString("Hologram").ifPresent(u -> this.hologram = UUID.fromString(u));
+        view.getOptionalString("Owner").ifPresent(u -> {
+            try {
+                this.owner = UUID.fromString(u);
+            } catch (IllegalArgumentException e) {
+                ReviveGraves.LOGGER.warn("Invalid Owner UUID in gravestone NBT: {}", u);
+            }
+        });
+        view.getOptionalString("Hologram").ifPresent(u -> {
+            try {
+                this.hologram = UUID.fromString(u);
+            } catch (IllegalArgumentException e) {
+                ReviveGraves.LOGGER.warn("Invalid Hologram UUID in gravestone NBT: {}", u);
+            }
+        });
+        view.getOptionalString("OriginalGameMode").ifPresent(g -> {
+            try {
+                this.originalGameMode = GameMode.valueOf(g);
+            } catch (IllegalArgumentException e) {
+                ReviveGraves.LOGGER.warn("Invalid GameMode in gravestone NBT: {}", g);
+            }
+        });
     }
 }

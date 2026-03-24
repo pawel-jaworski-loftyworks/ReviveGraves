@@ -40,18 +40,23 @@ public class ReviveGraves implements ModInitializer {
 			World raw = player.getEntityWorld();
 
 			if (!(raw instanceof ServerWorld world)) return;
+
+			// Store original game mode before changing to spectator
+			GameMode originalMode = player.interactionManager.getGameMode();
+
 			double px = player.getX(), pz = player.getZ();
 			BlockPos deathPos;
 			if (source == world.getDamageSources().outOfWorld()) {
 				int y = world.getBottomY() + 1;
-				deathPos = new BlockPos(MathHelper.floor(px), y, MathHelper.floor(pz));
+				deathPos = findSafePlacement(world, new BlockPos(MathHelper.floor(px), y, MathHelper.floor(pz)));
 			} else {
-				deathPos = player.getBlockPos();
+				deathPos = findSafePlacement(world, player.getBlockPos());
 			}
 			world.setBlockState(deathPos, ModBlocks.GRAVESTONE.getDefaultState(), 3);
 			BlockEntity be = world.getBlockEntity(deathPos);
 			if (be instanceof GravestoneBlockEntity gbe) {
 				gbe.setOwner(player.getUuid());
+				gbe.setOriginalGameMode(originalMode);
 				gbe.spawnHologram(world);
 			}
 		});
@@ -73,11 +78,26 @@ public class ReviveGraves implements ModInitializer {
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) -> {
 			if (state.getBlock() instanceof GravestoneBlock) {
 				if (!world.isClient()) {
-					player.sendMessage(Text.literal("Dieser Grabstein ist unzerstörbar!"), false);
+					player.sendMessage(Text.translatable("message.revivegraves.gravestone_indestructible"), false);
 				}
 				return false;
 			}
 			return true;
 		});
+	}
+
+	private static BlockPos findSafePlacement(ServerWorld world, BlockPos pos) {
+		if (world.getBlockState(pos).isReplaceable()) {
+			return pos;
+		}
+		// Search upward for a replaceable block
+		for (int dy = 1; dy <= 5; dy++) {
+			BlockPos up = pos.up(dy);
+			if (world.getBlockState(up).isReplaceable()) {
+				return up;
+			}
+		}
+		// Fallback: place at original position regardless
+		return pos;
 	}
 }

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find . -maxdepth 2 -type f -name *.gradle -o -name *.xml -o -name *.json -o -name .github -type d)",
+      "Bash(find /c/Users/LPPC/Documents/GitHub/revive-graves/src/main -type f -name *.java -o -name *.json)",
+      "Bash(./gradlew build:*)"
+    ]
+  }
+}
