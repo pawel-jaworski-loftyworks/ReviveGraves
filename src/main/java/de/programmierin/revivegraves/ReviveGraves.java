@@ -256,7 +256,7 @@ public class ReviveGraves implements ModInitializer {
 				if (ghost == null) continue;
 
 				// Soul particles every 10 ticks
-				if (tick % 10 == 0) {
+				if (ModConfig.INSTANCE.ghost.particlesEnabled && tick % 10 == 0) {
 					ServerWorld ghostWorld = (ServerWorld) ghost.getEntityWorld();
 					ghostWorld.spawnParticles(
 							ParticleTypes.SOUL_FIRE_FLAME,
@@ -265,6 +265,19 @@ public class ReviveGraves implements ModInitializer {
 							0.15, 0.1, 0.15,
 							0.0
 					);
+				}
+
+				// Slow falling: disable in water so ghost can swim, re-add on land
+				if (ModConfig.INSTANCE.ghost.slowFallingEnabled) {
+					if (ghost.isTouchingWater()) {
+						ghost.removeStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOW_FALLING);
+					} else if (!ghost.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.SLOW_FALLING)) {
+						ghost.addStatusEffect(new net.minecraft.entity.effect.StatusEffectInstance(
+								net.minecraft.entity.effect.StatusEffects.SLOW_FALLING,
+								net.minecraft.entity.effect.StatusEffectInstance.INFINITE,
+								0, true, false, false
+						));
+					}
 				}
 
 				// Block sprinting for ghosts

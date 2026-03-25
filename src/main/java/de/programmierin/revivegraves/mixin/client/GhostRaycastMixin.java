@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Entity.class)
 public abstract class GhostRaycastMixin {
 
-    private static final float CHICKEN_EYE_HEIGHT = 0.35f;
+    private static final float CHICKEN_EYE_HEIGHT = 0.595f;
 
     @Shadow
     private float standingEyeHeight;

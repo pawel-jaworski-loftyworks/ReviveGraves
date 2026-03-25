@@ -33,6 +33,8 @@ import java.util.*;
 public class GhostChickenState extends PersistentState {
 
     private static final Identifier SPEED_MODIFIER_ID = Identifier.of("revivegraves", "ghost_chicken_speed");
+    private static final Identifier SCALE_MODIFIER_ID = Identifier.of("revivegraves", "ghost_chicken_scale");
+    private static final Identifier STEP_HEIGHT_MODIFIER_ID = Identifier.of("revivegraves", "ghost_chicken_step");
 
     private final Map<UUID, GraveLocation> gravestoneLocations;
     private final Set<UUID> ghostPlayers;
@@ -172,6 +174,14 @@ public class GhostChickenState extends PersistentState {
                 0, true, false, false
         ));
 
+        if (ModConfig.INSTANCE.ghost.slowFallingEnabled) {
+            player.addStatusEffect(new StatusEffectInstance(
+                    StatusEffects.SLOW_FALLING,
+                    StatusEffectInstance.INFINITE,
+                    0, true, false, false
+            ));
+        }
+
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(SPEED_MODIFIER_ID);
@@ -179,6 +189,24 @@ public class GhostChickenState extends PersistentState {
             double modifier = (ModConfig.INSTANCE.ghost.speedMultiplier * basePlayerSpeed) - basePlayerSpeed;
             speedAttr.addTemporaryModifier(new EntityAttributeModifier(
                     SPEED_MODIFIER_ID, modifier, EntityAttributeModifier.Operation.ADD_VALUE
+            ));
+        }
+
+        // Scale player down to chicken size (1.8 * 0.389 = 0.7 height)
+        EntityAttributeInstance scaleAttr = player.getAttributeInstance(EntityAttributes.SCALE);
+        if (scaleAttr != null) {
+            scaleAttr.removeModifier(SCALE_MODIFIER_ID);
+            scaleAttr.addTemporaryModifier(new EntityAttributeModifier(
+                    SCALE_MODIFIER_ID, -0.611, EntityAttributeModifier.Operation.ADD_MULTIPLIED_BASE
+            ));
+        }
+
+        // Compensate step height so ghost can still walk up slabs/stairs
+        EntityAttributeInstance stepAttr = player.getAttributeInstance(EntityAttributes.STEP_HEIGHT);
+        if (stepAttr != null) {
+            stepAttr.removeModifier(STEP_HEIGHT_MODIFIER_ID);
+            stepAttr.addTemporaryModifier(new EntityAttributeModifier(
+                    STEP_HEIGHT_MODIFIER_ID, 0.6, EntityAttributeModifier.Operation.ADD_VALUE
             ));
         }
 
@@ -212,10 +240,21 @@ public class GhostChickenState extends PersistentState {
     public static void removeGhostState(ServerPlayerEntity player) {
         player.setInvulnerable(false);
         player.removeStatusEffect(StatusEffects.INVISIBILITY);
+        player.removeStatusEffect(StatusEffects.SLOW_FALLING);
 
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(SPEED_MODIFIER_ID);
+        }
+
+        EntityAttributeInstance scaleAttr = player.getAttributeInstance(EntityAttributes.SCALE);
+        if (scaleAttr != null) {
+            scaleAttr.removeModifier(SCALE_MODIFIER_ID);
+        }
+
+        EntityAttributeInstance stepAttr = player.getAttributeInstance(EntityAttributes.STEP_HEIGHT);
+        if (stepAttr != null) {
+            stepAttr.removeModifier(STEP_HEIGHT_MODIFIER_ID);
         }
 
         // Re-list player in tab (set listed=true)

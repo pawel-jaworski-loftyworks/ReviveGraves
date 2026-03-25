@@ -43,6 +43,8 @@ public class ModConfig {
 		public float speedMultiplier = 0.75f;
 		public boolean sprintEnabled = false;
 		public boolean spawnAtGravestone = false;
+		public boolean slowFallingEnabled = true;
+		public boolean particlesEnabled = true;
 	}
 
 	public static void load() {
@@ -122,6 +124,8 @@ public class ModConfig {
 				  speedMultiplier    : Ghost speed as multiplier of normal player speed (0.1-5.0, default 0.75 = 75%)
 				  sprintEnabled      : Whether ghosts can sprint (true/false, default false)
 				  spawnAtGravestone  : false = ghost spawns at player spawnpoint, true = ghost spawns at gravestone
+				  slowFallingEnabled : Ghost has slow falling like a real chicken (true/false, default true)
+				  particlesEnabled   : Show soul fire flame particles around ghost (true/false, default true)
 
 				All changes require a full server restart to take effect.
 				""";

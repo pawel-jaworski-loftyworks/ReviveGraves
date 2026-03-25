@@ -77,7 +77,11 @@ public class LivingEntityRendererMixin {
         chickenState.pitch = state.pitch;
         chickenState.limbSwingAnimationProgress = state.limbSwingAnimationProgress;
         chickenState.limbSwingAmplitude = state.limbSwingAmplitude;
-        chickenState.baseScale = 1.0f;
+        // In inventory screens, use the player's actual scale (0.389) so the
+        // inventory's entity-fitting logic produces a correctly sized chicken.
+        // In-world (F5), use 1.0 for a normal-sized chicken model.
+        boolean isInventoryRender = client.currentScreen instanceof net.minecraft.client.gui.screen.ingame.HandledScreen;
+        chickenState.baseScale = isInventoryRender ? state.baseScale : 1.0f;
         chickenState.ageScale = 1.0f;
         chickenState.baby = false;
 
