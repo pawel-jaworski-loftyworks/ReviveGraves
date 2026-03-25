@@ -91,7 +91,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                 .getPlayer(ownerUuid);
 
         GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) world).getServer());
-        if (dead != null && ghostState.isGhost(dead.getUuid())) {
+        if (dead != null && ghostState.isGhost(dead.getUuid()) && dead.getHealth() > 0) {
 
             // Check for revive token first
             ItemStack main = clicker.getMainHandStack();
@@ -123,18 +123,25 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                 off.decrement(1);
             }
 
-            // Remove ghost chicken state (effects, invisibility, speed modifier, tab list)
-            GhostChickenState.removeGhostState(dead);
+            // 1. Remove from ghost tracking FIRST (stops packet suppression)
             ghostState.removeGhost(dead.getUuid());
             ReviveGraves.clearGhostTickData(dead.getUuid());
 
-            // Force entity tracker refresh so other clients see a player again (not chicken)
-            serverWorld.getChunkManager().unloadEntity(dead);
-            serverWorld.getChunkManager().loadEntity(dead);
+            // 2. Remove effects (invisibility, invulnerable, speed, re-list in tab)
+            GhostChickenState.removeGhostState(dead);
 
-            // Restore original game mode
+            // 3. Explicitly clear invisible flag (safety — ensures DataTracker has correct value)
+            dead.setInvisible(false);
+
+            // 4. Restore original game mode BEFORE tracker refresh
+            //    so the fresh spawn packet has the correct game mode
             GameMode originalMode = gbe.getOriginalGameMode();
             dead.changeGameMode(originalMode != null ? originalMode : GameMode.SURVIVAL);
+
+            // 5. Force entity tracker refresh so other clients see a player again
+            //    This sends fresh spawn + metadata packets with all current state
+            serverWorld.getChunkManager().unloadEntity(dead);
+            serverWorld.getChunkManager().loadEntity(dead);
 
             serverWorld.spawnParticles(
                     ParticleTypes.TOTEM_OF_UNDYING,

@@ -3,7 +3,6 @@ package de.programmierin.revivegraves.client;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.SkullBlock;
-import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.block.entity.BlockEntityRenderer;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.render.block.entity.SkullBlockEntityModel;
@@ -13,7 +12,6 @@ import net.minecraft.client.render.command.OrderedRenderCommandQueue;
 import net.minecraft.client.render.state.CameraRenderState;
 import net.minecraft.client.texture.PlayerSkinCache;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.component.type.ProfileComponent;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 
@@ -48,13 +46,11 @@ public class GravestoneBlockEntityRenderer
 
         state.facing = entity.getCachedState().get(HorizontalFacingBlock.FACING);
 
-        if (ownerUuid != null) {
-            ProfileComponent profile = ProfileComponent.ofDynamic(ownerUuid);
-            PlayerSkinCache.Entry skinEntry = skinCache.get(profile);
-            state.skullRenderLayer = skinEntry.getRenderLayer();
-        } else {
-            state.skullRenderLayer = null;
-        }
+        // Always render a skull when the gravestone block exists.
+        // Use vanilla's cutout render layer (Steve default skin).
+        // ownerUuid may be null if BlockEntity data hasn't synced to this client yet.
+        state.skullRenderLayer = SkullBlockEntityRenderer.getCutoutRenderLayer(
+                SkullBlock.Type.PLAYER, null);
     }
 
     @Override

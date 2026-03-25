@@ -25,6 +25,8 @@ public class GravestoneBlockEntity extends BlockEntity {
     private String ownerName;
     private UUID hologram;
     private GameMode originalGameMode;
+    private String skinTextureValue;
+    private String skinTextureSignature;
 
     public GravestoneBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.GRAVESTONE, pos, state);
@@ -63,6 +65,20 @@ public class GravestoneBlockEntity extends BlockEntity {
     public void setOriginalGameMode(GameMode mode) {
         this.originalGameMode = mode;
         markDirty();
+    }
+
+    public void setSkinTexture(String value, String signature) {
+        this.skinTextureValue = value;
+        this.skinTextureSignature = signature;
+        markDirty();
+    }
+
+    public String getSkinTextureValue() {
+        return skinTextureValue;
+    }
+
+    public String getSkinTextureSignature() {
+        return skinTextureSignature;
     }
 
     public void spawnHologram(ServerWorld world) {
@@ -119,6 +135,12 @@ public class GravestoneBlockEntity extends BlockEntity {
         if (originalGameMode != null) {
             view.putString("OriginalGameMode", originalGameMode.name());
         }
+        if (skinTextureValue != null) {
+            view.putString("SkinTexture", skinTextureValue);
+        }
+        if (skinTextureSignature != null) {
+            view.putString("SkinSignature", skinTextureSignature);
+        }
     }
 
     @Override
@@ -148,5 +170,7 @@ public class GravestoneBlockEntity extends BlockEntity {
                 ReviveGraves.LOGGER.warn("Invalid GameMode in gravestone NBT: {}", g);
             }
         });
+        view.getOptionalString("SkinTexture").ifPresent(v -> this.skinTextureValue = v);
+        view.getOptionalString("SkinSignature").ifPresent(v -> this.skinTextureSignature = v);
     }
 }

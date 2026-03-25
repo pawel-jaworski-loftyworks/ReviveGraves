@@ -1,15 +1,22 @@
 package de.programmierin.revivegraves.mixin.client;
 
+import de.programmierin.revivegraves.ghost.GhostChickenRenderState;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
-/**
- * Adds a ghost chicken flag to the player render state.
- * When set, the player will be rendered as a chicken in F5 mode.
- */
 @Mixin(PlayerEntityRenderState.class)
-public class PlayerEntityRenderStateMixin {
+public class PlayerEntityRenderStateMixin implements GhostChickenRenderState {
     @Unique
-    public boolean revivegraves$isGhostChicken = false;
+    private boolean revivegraves$isGhostChicken = false;
+
+    @Override
+    public boolean revivegraves$isGhostChicken() {
+        return revivegraves$isGhostChicken;
+    }
+
+    @Override
+    public void revivegraves$setGhostChicken(boolean value) {
+        this.revivegraves$isGhostChicken = value;
+    }
 }

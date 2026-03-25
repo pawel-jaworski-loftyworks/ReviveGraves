@@ -38,6 +38,13 @@ run/
 CLAUDE.md
 .superpowers/
 
+# task tracking & decompiled sources
+
+tasks/
+docs/
+net/
+com/
+
 # java
 
 hs_err_*.log

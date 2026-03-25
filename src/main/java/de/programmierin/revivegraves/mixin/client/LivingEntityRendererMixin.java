@@ -39,7 +39,7 @@ public class LivingEntityRendererMixin {
             return;
         }
 
-        if (!((PlayerEntityRenderStateMixin) (Object) playerState).revivegraves$isGhostChicken) {
+        if (!((de.programmierin.revivegraves.ghost.GhostChickenRenderState) playerState).revivegraves$isGhostChicken()) {
             return;
         }
 
@@ -58,19 +58,40 @@ public class LivingEntityRendererMixin {
 
         // Build a ChickenEntityRenderState with position/rotation from the player
         ChickenEntityRenderState chickenState = new ChickenEntityRenderState();
+        // Base EntityRenderState fields
         chickenState.x = state.x;
         chickenState.y = state.y;
         chickenState.z = state.z;
         chickenState.age = state.age;
-        chickenState.bodyYaw = state.bodyYaw;
-        chickenState.pitch = state.pitch;
         chickenState.light = state.light;
-        chickenState.invisible = false; // Ghost chickens should be visible to themselves
+        chickenState.invisible = false;
         chickenState.sneaking = state.sneaking;
-        chickenState.width = state.width;
-        chickenState.height = state.height;
+        chickenState.width = 0.4f;
+        chickenState.height = 0.7f;
         chickenState.squaredDistanceToCamera = state.squaredDistanceToCamera;
         chickenState.shadowRadius = 0.3f;
+
+        // LivingEntityRenderState fields — animation
+        chickenState.bodyYaw = state.bodyYaw;
+        chickenState.relativeHeadYaw = state.relativeHeadYaw;
+        chickenState.pitch = state.pitch;
+        chickenState.limbSwingAnimationProgress = state.limbSwingAnimationProgress;
+        chickenState.limbSwingAmplitude = state.limbSwingAmplitude;
+        chickenState.baseScale = 1.0f;
+        chickenState.ageScale = 1.0f;
+        chickenState.baby = false;
+
+        // ChickenEntityRenderState fields — wing flap animation
+        // Simulate gentle wing flap based on age (time)
+        float flapSpeed = 0.6f;
+        float flapAmount = 0.3f;
+        if (state.limbSwingAmplitude > 0.01f) {
+            // Walking — flap more
+            flapSpeed = 1.0f;
+            flapAmount = 0.5f;
+        }
+        chickenState.flapProgress = state.age * flapSpeed;
+        chickenState.maxWingDeviation = flapAmount;
 
         // Set the chicken variant - required for rendering (ChickenEntityRenderer returns early if null)
         client.world.getRegistryManager()

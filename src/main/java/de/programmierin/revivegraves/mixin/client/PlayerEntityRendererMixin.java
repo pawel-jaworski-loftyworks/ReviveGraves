@@ -31,6 +31,6 @@ public class PlayerEntityRendererMixin {
                 && client.interactionManager.getCurrentGameMode() == GameMode.ADVENTURE
                 && client.player.hasStatusEffect(StatusEffects.INVISIBILITY);
 
-        ((PlayerEntityRenderStateMixin) (Object) state).revivegraves$isGhostChicken = isGhost;
+        ((de.programmierin.revivegraves.ghost.GhostChickenRenderState) state).revivegraves$setGhostChicken(isGhost);
     }
 }

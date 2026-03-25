@@ -18,16 +18,15 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * Intercepts outgoing packets on ServerCommonNetworkHandler to filter ghost players
- * from PlayerListS2CPacket (tab list) entries. This prevents ghost-chicken players
- * from appearing in other players' tab lists.
+ * Intercepts outgoing PlayerListS2CPacket to hide ghost players from the tab list
+ * while preserving their GameProfile data (needed for gravestone skull skin resolution).
+ * Ghost entries are kept but modified to listed=false instead of being removed.
  */
 @Mixin(ServerCommonNetworkHandler.class)
 public abstract class ServerPlayNetworkHandlerMixin {
 
-    @Inject(method = "sendPacket", at = @At("HEAD"), cancellable = true)
-    private void revivegraves$filterGhostFromTabList(Packet<?> packet, CallbackInfo ci) {
-        // Only apply to ServerPlayNetworkHandler instances (not config/login handlers)
+    @Inject(method = "sendPacket", at = @At("HEAD"))
+    private void revivegraves$unlistGhostFromTabList(Packet<?> packet, CallbackInfo ci) {
         if (!(((Object) this) instanceof ServerPlayNetworkHandler handler)) return;
 
         ServerPlayerEntity receiver = handler.getPlayer();
@@ -45,22 +44,24 @@ public abstract class ServerPlayNetworkHandlerMixin {
         List<PlayerListS2CPacket.Entry> originalEntries =
                 ((PlayerListS2CPacketAccessor) listPacket).revivegraves$getEntries();
 
-        List<PlayerListS2CPacket.Entry> filteredEntries = new ArrayList<>();
+        boolean modified = false;
+        List<PlayerListS2CPacket.Entry> newEntries = new ArrayList<>(originalEntries.size());
         for (PlayerListS2CPacket.Entry entry : originalEntries) {
-            if (!ghostUuids.contains(entry.profileId())) {
-                filteredEntries.add(entry);
+            if (ghostUuids.contains(entry.profileId()) && entry.listed()) {
+                // Keep the entry but set listed=false so the GameProfile is preserved
+                // on the client (needed for gravestone skull skin) without showing in tab
+                newEntries.add(new PlayerListS2CPacket.Entry(
+                        entry.profileId(), entry.profile(), false, entry.latency(),
+                        entry.gameMode(), entry.displayName(), entry.showHat(),
+                        entry.listOrder(), entry.chatSession()));
+                modified = true;
+            } else {
+                newEntries.add(entry);
             }
         }
 
-        // If all entries were ghosts, cancel the packet entirely
-        if (filteredEntries.isEmpty()) {
-            ci.cancel();
-            return;
-        }
-
-        // If some entries were filtered, replace the list
-        if (filteredEntries.size() != originalEntries.size()) {
-            ((PlayerListS2CPacketAccessor) listPacket).revivegraves$setEntries(filteredEntries);
+        if (modified) {
+            ((PlayerListS2CPacketAccessor) listPacket).revivegraves$setEntries(newEntries);
         }
     }
 }

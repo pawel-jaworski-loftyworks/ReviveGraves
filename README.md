@@ -5,25 +5,56 @@
 
 *Keep your friends alive—even after death.*
 
-**ReviveGraves** (Fabric 1.21.9) adds cooperative rescue mechanics:
+**ReviveGraves** (Fabric 1.21.9) adds cooperative rescue mechanics to your Minecraft server.
 
-- 💀 **Gravestones on Death**  
-  Leaves an indestructible marker at your death spot.
-- 👻 **Spectator Mode**  
-  Fallen players roam as spectators until rescued.
-- ❤️ **Revive Token**  
-  Teammates click the gravestone with a token → dead player respawns in Survival, token is consumed.
-- 📦 **Loot Safe**  
-  Enable `keepInventory` to store items in the gravestone until rescue.
+---
+
+## Features
+
+- 💀 **Gravestones on Death**
+  An indestructible gravestone spawns at your death location with a skull and your name above it.
+
+- 🐔 **Ghost Chicken Mode**
+  Fallen players respawn as invisible ghost chickens in Adventure mode — other players see a chicken, while you experience the world from chicken eye level.
+
+- ❤️ **Revive Token**
+  Teammates right-click the gravestone with a Revive Token to bring you back — you teleport to the gravestone, return to Survival mode, and the token is consumed.
+
+- 👻 **Ghost Mechanics**
+  As a ghost chicken you can open doors and gates, but you can't interact with containers, armor stands, or other entities. Soul particles trail behind you and chicken sounds play at random intervals.
+
+- 🌍 **Cross-Dimension Support**
+  Die in the Nether? Your teammate can still revive you from the Overworld gravestone — you'll be teleported across dimensions.
+
+- 🔄 **Reconnect Safe**
+  Disconnect as a ghost? When you reconnect, your ghost state is restored. If your gravestone was destroyed while offline, you respawn normally.
+
+- 🛡️ **Ghost Protection**
+  Ghosts are invulnerable, can't deal damage, can't pick up items, and are hidden from the tab list. Void protection teleports you back to your gravestone if you fall out of the world.
+
+---
+
+## Installation
+
+1. Install [Fabric Loader](https://fabricmc.net/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.9
+2. Download the latest ReviveGraves JAR from [Releases](../../releases)
+3. Place the JAR in your `mods/` folder
+4. Launch the game
+
+---
+
+## Crafting
+
+**Revive Token** — crafted in a crafting table (see in-game recipe).
 
 ---
 
 ## Inspiration & Thanks
 
-**FWhip’s Hardcore SOS**, **Kaupenjoe** (Fabric tutorials) & **B1n-ry / You’re in Grave Danger**.
+**FWhip's Hardcore SOS**, **Kaupenjoe** (Fabric tutorials) & **B1n-ry / [You're in Grave Danger](https://github.com/B1n-ry/Youre-in-grave-danger)**.
 
 ---
 
 © MIT License
 
-If you have questions or feedback feel free to join my discord: https://discord.gg/VDzC4v8MXV 
+If you have questions or feedback feel free to join my Discord: https://discord.gg/VDzC4v8MXV

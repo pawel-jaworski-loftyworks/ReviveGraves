@@ -4,11 +4,14 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"EntityTrackerEntryMixin",
+		"ItemEntityMixin",
 		"PlayerListS2CPacketAccessor",
 		"ServerPlayNetworkHandlerMixin"
 	],
 	"client": [
+		"client.CameraMixin",
 		"client.EntityRenderManagerAccessor",
+		"client.GhostRaycastMixin",
 		"client.LivingEntityRendererMixin",
 		"client.PlayerEntityRenderStateMixin",
 		"client.PlayerEntityRendererMixin"

@@ -8,8 +8,9 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerRemoveS2CPacket;
 import net.minecraft.server.MinecraftServer;
+
+import java.util.EnumSet;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
@@ -28,7 +29,7 @@ import java.util.*;
 public class GhostChickenState extends PersistentState {
 
     private static final Identifier SPEED_MODIFIER_ID = Identifier.of("revivegraves", "ghost_chicken_speed");
-    private static final double GHOST_SPEED_MODIFIER = 0.03;
+    private static final double GHOST_SPEED_MODIFIER = 0.01;
 
     private final Map<UUID, GraveLocation> gravestoneLocations;
     private final Set<UUID> ghostPlayers;
@@ -165,12 +166,26 @@ public class GhostChickenState extends PersistentState {
             ));
         }
 
-        // Remove ghost from all clients' tab lists
+        // Hide ghost from tab list but keep profile/skin data in playerListEntries
+        // (needed for gravestone skull rendering on other clients).
+        // DON'T remove from player list — just set listed=false via UPDATE_LISTED.
+        // This keeps the GameProfile available for skin resolution.
         MinecraftServer server = player.getEntityWorld().getServer();
         if (server != null) {
-            PlayerRemoveS2CPacket removePacket = new PlayerRemoveS2CPacket(List.of(player.getUuid()));
+            // Create UPDATE_LISTED packet with listed=false
+            PlayerListS2CPacket unlistPacket = new PlayerListS2CPacket(
+                    EnumSet.of(PlayerListS2CPacket.Action.UPDATE_LISTED), List.of(player));
+            // entryFromPlayer creates entries with listed=true, override to false
+            var accessor = (de.programmierin.revivegraves.mixin.PlayerListS2CPacketAccessor) (Object) unlistPacket;
+            List<PlayerListS2CPacket.Entry> unlisted = accessor.revivegraves$getEntries().stream()
+                    .map(e -> new PlayerListS2CPacket.Entry(
+                            e.profileId(), e.profile(), false, e.latency(),
+                            e.gameMode(), e.displayName(), e.showHat(), e.listOrder(), e.chatSession()))
+                    .toList();
+            accessor.revivegraves$setEntries(unlisted);
+
             for (ServerPlayerEntity onlinePlayer : server.getPlayerManager().getPlayerList()) {
-                onlinePlayer.networkHandler.sendPacket(removePacket);
+                onlinePlayer.networkHandler.sendPacket(unlistPacket);
             }
         }
     }
@@ -187,17 +202,16 @@ public class GhostChickenState extends PersistentState {
             speedAttr.removeModifier(SPEED_MODIFIER_ID);
         }
 
-        // Re-add player to all clients' tab lists
+        // Re-list player in tab (set listed=true)
         MinecraftServer server = player.getEntityWorld().getServer();
         if (server != null) {
-            PlayerListS2CPacket addPacket = PlayerListS2CPacket.entryFromPlayer(List.of(player));
+            PlayerListS2CPacket relistPacket = new PlayerListS2CPacket(
+                    EnumSet.of(PlayerListS2CPacket.Action.UPDATE_LISTED), List.of(player));
+            // Entry from player will have listed=true by default — which is what we want
             for (ServerPlayerEntity onlinePlayer : server.getPlayerManager().getPlayerList()) {
-                onlinePlayer.networkHandler.sendPacket(addPacket);
+                onlinePlayer.networkHandler.sendPacket(relistPacket);
             }
         }
     }
 
-    public static Identifier getSpeedModifierId() {
-        return SPEED_MODIFIER_ID;
-    }
 }

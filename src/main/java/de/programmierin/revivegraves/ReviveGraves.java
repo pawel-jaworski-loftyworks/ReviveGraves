@@ -43,6 +43,8 @@ public class ReviveGraves implements ModInitializer {
 
 	// Tick tracking for ghost chicken sounds (random 5-15s intervals)
 	private static final Map<UUID, Integer> nextSoundTick = new HashMap<>();
+	// Tick when ghost was added (for time-limited gravestone sync)
+	private static final Map<UUID, Integer> ghostStartTick = new HashMap<>();
 
 	@Override
 	public void onInitialize() {
@@ -77,7 +79,25 @@ public class ReviveGraves implements ModInitializer {
 				gbe.setOwner(player.getUuid());
 				gbe.setOwnerName(player.getGameProfile().name());
 				gbe.setOriginalGameMode(originalMode);
+
+				// Store skin texture for client-side skull rendering (independent of PlayerList)
+				com.mojang.authlib.properties.Property textures = player.getGameProfile()
+						.properties().get("textures").stream().findFirst().orElse(null);
+				if (textures != null) {
+					gbe.setSkinTexture(textures.value(), textures.signature());
+				}
+
 				gbe.spawnHologram(world);
+
+				// Explicitly send BlockEntity data to all clients.
+				// updateListeners() alone may not trigger a BlockEntityUpdateS2CPacket in 1.21.9.
+				net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket packet =
+						net.minecraft.network.packet.s2c.play.BlockEntityUpdateS2CPacket.create(gbe);
+				if (packet != null) {
+					for (ServerPlayerEntity onlinePlayer : world.getServer().getPlayerManager().getPlayerList()) {
+						onlinePlayer.networkHandler.sendPacket(packet);
+					}
+				}
 			}
 
 			// Track ghost state and enforce one-gravestone-per-player invariant
@@ -93,6 +113,7 @@ public class ReviveGraves implements ModInitializer {
 			}
 			String dimension = world.getRegistryKey().getValue().toString();
 			ghostState.addGhost(player.getUuid(), dimension, deathPos);
+			ghostStartTick.put(player.getUuid(), world.getServer().getTicks());
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((ServerPlayerEntity oldPlayer,
@@ -104,6 +125,25 @@ public class ReviveGraves implements ModInitializer {
 					GhostChickenState.applyGhostState(newPlayer);
 				}
 			}
+		});
+
+		// Block all damage from/to ghost players
+		ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
+			// Ghost takes no damage
+			if (entity instanceof ServerPlayerEntity target) {
+				GhostChickenState gs = GhostChickenState.get(((ServerWorld) target.getEntityWorld()).getServer());
+				if (gs.isGhost(target.getUuid())) {
+					return false;
+				}
+			}
+			// Ghost deals no damage
+			if (source.getAttacker() instanceof ServerPlayerEntity attacker) {
+				GhostChickenState gs = GhostChickenState.get(((ServerWorld) attacker.getEntityWorld()).getServer());
+				if (gs.isGhost(attacker.getUuid())) {
+					return false;
+				}
+			}
+			return true;
 		});
 
 		// Suppress death for ghost players
@@ -122,6 +162,38 @@ public class ReviveGraves implements ModInitializer {
 				Identifier.of(MOD_ID, "gravestone"),
 				ModBlockEntities.GRAVESTONE
 		);
+
+		// Block ghost chickens from interacting with containers (furnaces, chests, etc.)
+		// Only allow doors, trapdoors, fence gates, buttons, levers
+		net.fabricmc.fabric.api.event.player.UseBlockCallback.EVENT.register((player, world2, hand, hitResult) -> {
+			if (world2.isClient()) return net.minecraft.util.ActionResult.PASS;
+			if (!(player instanceof ServerPlayerEntity serverPlayer)) return net.minecraft.util.ActionResult.PASS;
+			GhostChickenState gs = GhostChickenState.get(((ServerWorld) world2).getServer());
+			if (!gs.isGhost(serverPlayer.getUuid())) return net.minecraft.util.ActionResult.PASS;
+
+			// Allow interaction with doors, trapdoors, fence gates, buttons, levers, gravestone
+			net.minecraft.block.Block block = world2.getBlockState(hitResult.getBlockPos()).getBlock();
+			if (block instanceof net.minecraft.block.DoorBlock
+					|| block instanceof net.minecraft.block.TrapdoorBlock
+					|| block instanceof net.minecraft.block.FenceGateBlock
+					|| block instanceof net.minecraft.block.ButtonBlock
+					|| block instanceof net.minecraft.block.LeverBlock
+					|| block instanceof GravestoneBlock) {
+				return net.minecraft.util.ActionResult.PASS;
+			}
+
+			// Block everything else (containers, crafting tables, etc.)
+			return net.minecraft.util.ActionResult.FAIL;
+		});
+
+		// Block ghost chickens from interacting with entities (armor stands, item frames, etc.)
+		net.fabricmc.fabric.api.event.player.UseEntityCallback.EVENT.register((player, world2, hand, entity2, hitResult) -> {
+			if (world2.isClient()) return net.minecraft.util.ActionResult.PASS;
+			if (!(player instanceof ServerPlayerEntity serverPlayer)) return net.minecraft.util.ActionResult.PASS;
+			GhostChickenState gs2 = GhostChickenState.get(((ServerWorld) world2).getServer());
+			if (!gs2.isGhost(serverPlayer.getUuid())) return net.minecraft.util.ActionResult.PASS;
+			return net.minecraft.util.ActionResult.FAIL;
+		});
 
 		PlayerBlockBreakEvents.BEFORE.register((world, player, pos, state, entity) -> {
 			if (state.getBlock() instanceof GravestoneBlock) {
@@ -188,10 +260,25 @@ public class ReviveGraves implements ModInitializer {
 					}
 				}
 
-				// Item clear: if ghost has items, remove them
-				if (!ghost.getInventory().isEmpty()) {
-					ghost.getInventory().clear();
+				// Re-trigger gravestone block entity sync for the first 5 seconds only
+				int startTick = ghostStartTick.getOrDefault(uuid, tick);
+				if (tick % 20 == 0 && tick - startTick < 100) {
+					GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(uuid);
+					if (graveLoc != null) {
+						RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
+						ServerWorld graveWorld = server.getWorld(dimKey);
+						if (graveWorld != null) {
+							BlockPos gravePos = graveLoc.pos();
+							BlockEntity be = graveWorld.getBlockEntity(gravePos);
+							if (be instanceof GravestoneBlockEntity) {
+								graveWorld.updateListeners(gravePos, graveWorld.getBlockState(gravePos),
+										graveWorld.getBlockState(gravePos), 3);
+							}
+						}
+					}
 				}
+
+				// Item pickup is now blocked by ItemEntityMixin (prevents pickup at source)
 			}
 		});
 
@@ -226,6 +313,7 @@ public class ReviveGraves implements ModInitializer {
 	 */
 	public static void clearGhostTickData(UUID uuid) {
 		nextSoundTick.remove(uuid);
+		ghostStartTick.remove(uuid);
 	}
 
 	private static BlockPos findSafePlacement(ServerWorld world, BlockPos pos) {
