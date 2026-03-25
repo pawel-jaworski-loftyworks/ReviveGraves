@@ -27,6 +27,7 @@ public class GravestoneBlockEntity extends BlockEntity {
     private GameMode originalGameMode;
     private String skinTextureValue;
     private String skinTextureSignature;
+    private long creationTick = -1;
 
     public GravestoneBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.GRAVESTONE, pos, state);
@@ -79,6 +80,15 @@ public class GravestoneBlockEntity extends BlockEntity {
 
     public String getSkinTextureSignature() {
         return skinTextureSignature;
+    }
+
+    public long getCreationTick() {
+        return creationTick;
+    }
+
+    public void setCreationTick(long tick) {
+        this.creationTick = tick;
+        markDirty();
     }
 
     public void spawnHologram(ServerWorld world) {
@@ -141,6 +151,9 @@ public class GravestoneBlockEntity extends BlockEntity {
         if (skinTextureSignature != null) {
             view.putString("SkinSignature", skinTextureSignature);
         }
+        if (creationTick >= 0) {
+            view.putString("CreationTick", String.valueOf(creationTick));
+        }
     }
 
     @Override
@@ -172,5 +185,12 @@ public class GravestoneBlockEntity extends BlockEntity {
         });
         view.getOptionalString("SkinTexture").ifPresent(v -> this.skinTextureValue = v);
         view.getOptionalString("SkinSignature").ifPresent(v -> this.skinTextureSignature = v);
+        view.getOptionalString("CreationTick").ifPresent(t -> {
+            try {
+                this.creationTick = Long.parseLong(t);
+            } catch (NumberFormatException e) {
+                ReviveGraves.LOGGER.warn("Invalid CreationTick in gravestone NBT: {}", t);
+            }
+        });
     }
 }

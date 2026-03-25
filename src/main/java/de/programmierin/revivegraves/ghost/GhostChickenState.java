@@ -9,6 +9,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
+import de.programmierin.revivegraves.config.ModConfig;
 
 import java.util.EnumSet;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -29,7 +30,6 @@ import java.util.*;
 public class GhostChickenState extends PersistentState {
 
     private static final Identifier SPEED_MODIFIER_ID = Identifier.of("revivegraves", "ghost_chicken_speed");
-    private static final double GHOST_SPEED_MODIFIER = 0.01;
 
     private final Map<UUID, GraveLocation> gravestoneLocations;
     private final Set<UUID> ghostPlayers;
@@ -141,6 +141,15 @@ public class GhostChickenState extends PersistentState {
         markDirty();
     }
 
+    /**
+     * Marks the gravestone as expired (removes location reference but keeps ghost state).
+     * The player remains a ghost until revived by other means or the server handles cleanup.
+     */
+    public void setGravestoneExpired(UUID uuid) {
+        gravestoneLocations.remove(uuid);
+        markDirty();
+    }
+
     public Set<UUID> getGhostPlayerUuids() {
         return Collections.unmodifiableSet(ghostPlayers);
     }
@@ -161,8 +170,10 @@ public class GhostChickenState extends PersistentState {
         EntityAttributeInstance speedAttr = player.getAttributeInstance(EntityAttributes.MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.removeModifier(SPEED_MODIFIER_ID);
+            double basePlayerSpeed = 0.1;
+            double modifier = (ModConfig.INSTANCE.ghost.speedMultiplier * basePlayerSpeed) - basePlayerSpeed;
             speedAttr.addTemporaryModifier(new EntityAttributeModifier(
-                    SPEED_MODIFIER_ID, GHOST_SPEED_MODIFIER, EntityAttributeModifier.Operation.ADD_VALUE
+                    SPEED_MODIFIER_ID, modifier, EntityAttributeModifier.Operation.ADD_VALUE
             ));
         }
 

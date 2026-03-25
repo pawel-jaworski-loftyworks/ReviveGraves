@@ -1,5 +1,6 @@
 package de.programmierin.revivegraves;
 
+import de.programmierin.revivegraves.config.ModConfig;
 import de.programmierin.revivegraves.item.ModItemGroups;
 import de.programmierin.revivegraves.loot.ModLootTableModifiers;
 import net.fabricmc.api.ModInitializer;
@@ -13,6 +14,7 @@ import de.programmierin.revivegraves.block.custom.GravestoneBlock;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import de.programmierin.revivegraves.entity.ModBlockEntities;
 import de.programmierin.revivegraves.item.ModItems;
+import net.minecraft.entity.Entity;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.network.packet.s2c.play.PositionFlag;
@@ -49,6 +51,7 @@ public class ReviveGraves implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+		ModConfig.load();
 		ModItems.registerModItems();
 		ModBlocks.registerModBlocks();
 		ModItemGroups.registerItemGroups();
@@ -90,6 +93,7 @@ public class ReviveGraves implements ModInitializer {
 				}
 
 				gbe.spawnHologram(world);
+				gbe.setCreationTick(world.getServer().getTicks());
 
 				// Explicitly send BlockEntity data to all clients.
 				// updateListeners() alone may not trigger a BlockEntityUpdateS2CPacket in 1.21.9.
@@ -125,6 +129,26 @@ public class ReviveGraves implements ModInitializer {
 				GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) newPlayer.getEntityWorld()).getServer());
 				if (ghostState.isGhost(newPlayer.getUuid())) {
 					GhostChickenState.applyGhostState(newPlayer);
+
+					// Teleport ghost to gravestone if configured
+					if (ModConfig.INSTANCE.ghost.spawnAtGravestone) {
+						GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(newPlayer.getUuid());
+						if (graveLoc != null) {
+							RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
+							ServerWorld graveWorld = ((ServerWorld) newPlayer.getEntityWorld()).getServer().getWorld(dimKey);
+							if (graveWorld != null) {
+								newPlayer.teleport(
+										graveWorld,
+										graveLoc.pos().getX() + 0.5,
+										graveLoc.pos().getY() + 1.0,
+										graveLoc.pos().getZ() + 0.5,
+										EnumSet.noneOf(PositionFlag.class),
+										newPlayer.getYaw(), newPlayer.getPitch(),
+										false
+								);
+							}
+						}
+					}
 				}
 			}
 		});
@@ -212,7 +236,7 @@ public class ReviveGraves implements ModInitializer {
 			GhostChickenState ghostState = GhostChickenState.get(server);
 			int tick = server.getTicks();
 
-			for (UUID uuid : ghostState.getGhostPlayerUuids()) {
+			for (UUID uuid : new java.util.ArrayList<>(ghostState.getGhostPlayerUuids())) {
 				ServerPlayerEntity ghost = server.getPlayerManager().getPlayer(uuid);
 				if (ghost == null) continue;
 
@@ -226,6 +250,11 @@ public class ReviveGraves implements ModInitializer {
 							0.15, 0.1, 0.15,
 							0.0
 					);
+				}
+
+				// Block sprinting for ghosts
+				if (!ModConfig.INSTANCE.ghost.sprintEnabled && ghost.isSprinting()) {
+					ghost.setSprinting(false);
 				}
 
 				// Chicken sounds at random 5-15 second intervals
@@ -280,6 +309,50 @@ public class ReviveGraves implements ModInitializer {
 					}
 				}
 
+				// Gravestone timer + hologram countdown (every second)
+				if (ModConfig.INSTANCE.gravestone.timerEnabled && tick % 20 == 0) {
+					GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(uuid);
+					if (graveLoc != null) {
+						RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
+						ServerWorld graveWorld = server.getWorld(dimKey);
+						if (graveWorld != null) {
+							BlockEntity timerBe = graveWorld.getBlockEntity(graveLoc.pos());
+							if (timerBe instanceof GravestoneBlockEntity timerGbe) {
+								long creationTick = timerGbe.getCreationTick();
+								if (creationTick >= 0) {
+									long elapsedSeconds = (tick - creationTick) / 20;
+									long remainingSeconds = ModConfig.INSTANCE.gravestone.timerSeconds - elapsedSeconds;
+
+									if (remainingSeconds <= 0) {
+										// Timer expired — remove gravestone + hologram, ghost stays ghost
+										UUID holoId = timerGbe.getHologram();
+										if (holoId != null) {
+											Entity holo = graveWorld.getEntity(holoId);
+											if (holo != null) holo.discard();
+										}
+										graveWorld.removeBlock(graveLoc.pos(), false);
+										ghostState.setGravestoneExpired(uuid);
+										ghost.sendMessage(Text.translatable("message.revivegraves.gravestone_expired"), false);
+									} else {
+										// Update hologram with countdown
+										UUID holoId = timerGbe.getHologram();
+										if (holoId != null) {
+											Entity holo = graveWorld.getEntity(holoId);
+											if (holo != null) {
+												int minutes = (int)(remainingSeconds / 60);
+												int seconds = (int)(remainingSeconds % 60);
+												String name = timerGbe.getOwnerName() != null ? timerGbe.getOwnerName() : "???";
+												holo.setCustomName(Text.literal(
+														String.format("%s - %d:%02d", name, minutes, seconds)));
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
 				// Item pickup is now blocked by ItemEntityMixin (prevents pickup at source)
 			}
 		});
@@ -287,6 +360,31 @@ public class ReviveGraves implements ModInitializer {
 		// --- Task 8: Reconnect handling ---
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
+			// Start token grant for new players
+			if (ModConfig.INSTANCE.startTokens.enabled) {
+				Identifier advId = Identifier.of(ReviveGraves.MOD_ID, "first_join_tokens");
+				var advancementEntry = server.getAdvancementLoader().get(advId);
+				if (advancementEntry != null) {
+					var progress = player.getAdvancementTracker().getProgress(advancementEntry);
+					if (!progress.isDone()) {
+						int amount = ModConfig.INSTANCE.startTokens.amount;
+						if (amount > 0) {
+							net.minecraft.item.ItemStack tokens = new net.minecraft.item.ItemStack(
+									ModItems.REVIVE_TOKEN, amount);
+							if (!player.getInventory().insertStack(tokens)) {
+								player.dropItem(tokens, false);
+							}
+							LOGGER.info("Granted {} start tokens to new player {}",
+									amount, player.getGameProfile().name());
+							player.sendMessage(Text.translatable("message.revivegraves.start_tokens_granted",
+									amount), false);
+						}
+						// Always grant advancement marker (prevents future grants if amount changes)
+						player.getAdvancementTracker().grantCriterion(advancementEntry, "granted");
+					}
+				}
+			}
+
 			GhostChickenState ghostState = GhostChickenState.get(server);
 			if (!ghostState.isGhost(player.getUuid())) return;
 
