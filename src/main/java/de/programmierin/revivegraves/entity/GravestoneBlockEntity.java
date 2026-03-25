@@ -59,6 +59,12 @@ public class GravestoneBlockEntity extends BlockEntity {
         return hologram;
     }
 
+    public void discardHologram(ServerWorld world) {
+        if (hologram == null) return;
+        Entity holo = world.getEntity(hologram);
+        if (holo != null) holo.discard();
+    }
+
     public GameMode getOriginalGameMode() {
         return originalGameMode;
     }

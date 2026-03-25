@@ -64,11 +64,9 @@ public class PlayerStatsState extends PersistentState {
 	}
 
 	private List<StatsEntry> toEntryList() {
-		List<StatsEntry> entries = new ArrayList<>();
-		for (Map.Entry<UUID, PlayerStats> entry : playerStats.entrySet()) {
-			entries.add(new StatsEntry(entry.getKey().toString(), entry.getValue()));
-		}
-		return entries;
+		return playerStats.entrySet().stream()
+				.map(e -> new StatsEntry(e.getKey().toString(), e.getValue()))
+				.toList();
 	}
 
 	private static PlayerStatsState fromEntryList(List<StatsEntry> entries) {

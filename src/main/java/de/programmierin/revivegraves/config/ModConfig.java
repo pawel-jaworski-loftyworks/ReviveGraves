@@ -80,26 +80,16 @@ public class ModConfig {
 	}
 
 	private void validate() {
-		loot.endCityChance = clampFloat("loot.endCityChance", loot.endCityChance, 0.0f, 1.0f);
-		loot.ominousVaultChance = clampFloat("loot.ominousVaultChance", loot.ominousVaultChance, 0.0f, 1.0f);
-		startTokens.amount = clampInt("startTokens.amount", startTokens.amount, 0, 64);
-		gravestone.timerSeconds = clampInt("gravestone.timerSeconds", gravestone.timerSeconds, 10, 86400);
-		ghost.speedMultiplier = clampFloat("ghost.speedMultiplier", ghost.speedMultiplier, 0.1f, 5.0f);
+		loot.endCityChance = clamp("loot.endCityChance", loot.endCityChance, 0.0f, 1.0f);
+		loot.ominousVaultChance = clamp("loot.ominousVaultChance", loot.ominousVaultChance, 0.0f, 1.0f);
+		startTokens.amount = clamp("startTokens.amount", startTokens.amount, 0, 64);
+		gravestone.timerSeconds = clamp("gravestone.timerSeconds", gravestone.timerSeconds, 10, 86400);
+		ghost.speedMultiplier = clamp("ghost.speedMultiplier", ghost.speedMultiplier, 0.1f, 5.0f);
 	}
 
-	private float clampFloat(String name, float value, float min, float max) {
-		if (value < min || value > max) {
-			float clamped = Math.max(min, Math.min(max, value));
-			ReviveGraves.LOGGER.warn("Config '{}' value {} out of range [{}, {}], clamped to {}",
-					name, value, min, max, clamped);
-			return clamped;
-		}
-		return value;
-	}
-
-	private int clampInt(String name, int value, int min, int max) {
-		if (value < min || value > max) {
-			int clamped = Math.max(min, Math.min(max, value));
+	private <T extends Comparable<T>> T clamp(String name, T value, T min, T max) {
+		if (value.compareTo(min) < 0 || value.compareTo(max) > 0) {
+			T clamped = value.compareTo(min) < 0 ? min : max;
 			ReviveGraves.LOGGER.warn("Config '{}' value {} out of range [{}, {}], clamped to {}",
 					name, value, min, max, clamped);
 			return clamped;

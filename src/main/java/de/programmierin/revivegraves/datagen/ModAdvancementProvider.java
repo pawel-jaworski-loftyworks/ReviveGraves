@@ -12,6 +12,7 @@ import net.minecraft.advancement.AdvancementEntry;
 import net.minecraft.advancement.AdvancementFrame;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.advancement.criterion.ImpossibleCriterion;
+import net.minecraft.item.ItemConvertible;
 import net.minecraft.item.Items;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.text.Text;
@@ -43,102 +44,25 @@ public class ModAdvancementProvider extends FabricAdvancementProvider {
 				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
 				.build(consumer, ModAdvancements.ROOT.toString());
 
-		// Emergency Supplies — receive start tokens
-		AdvancementEntry emergencySupplies = Advancement.Builder.create()
-				.parent(root)
-				.display(
-						ModItems.REVIVE_TOKEN.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.emergency_supplies.title"),
-						Text.translatable("advancements.revivegraves.emergency_supplies.description"),
-						null,
-						AdvancementFrame.TASK,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.EMERGENCY_SUPPLIES.toString());
+		AdvancementEntry emergencySupplies = advancement(consumer, root, ModItems.REVIVE_TOKEN, ModAdvancements.EMERGENCY_SUPPLIES, AdvancementFrame.TASK);
+		AdvancementEntry firstFall = advancement(consumer, root, Items.SKELETON_SKULL, ModAdvancements.FIRST_FALL, AdvancementFrame.TASK);
+		advancement(consumer, firstFall, Items.TOTEM_OF_UNDYING, ModAdvancements.FREQUENT_FLYER, AdvancementFrame.GOAL);
+		AdvancementEntry lingeringSpirit = advancement(consumer, firstFall, Items.SOUL_LANTERN, ModAdvancements.LINGERING_SPIRIT, AdvancementFrame.GOAL);
+		advancement(consumer, lingeringSpirit, Items.SOUL_CAMPFIRE, ModAdvancements.ETERNAL_HAUNTING, AdvancementFrame.CHALLENGE);
+		AdvancementEntry helpingHand = advancement(consumer, root, Items.GOLDEN_APPLE, ModAdvancements.HELPING_HAND, AdvancementFrame.TASK);
+		advancement(consumer, helpingHand, Items.ENCHANTED_GOLDEN_APPLE, ModAdvancements.MEDIC, AdvancementFrame.CHALLENGE);
+	}
 
-		// First Fall — die for the first time
-		AdvancementEntry firstFall = Advancement.Builder.create()
-				.parent(root)
-				.display(
-						Items.SKELETON_SKULL.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.first_fall.title"),
-						Text.translatable("advancements.revivegraves.first_fall.description"),
-						null,
-						AdvancementFrame.TASK,
-						true, true, false
-				)
+	private static AdvancementEntry advancement(Consumer<AdvancementEntry> consumer,
+			AdvancementEntry parent, ItemConvertible icon, Identifier id, AdvancementFrame frame) {
+		String key = "advancements." + id.getNamespace() + "." + id.getPath();
+		return Advancement.Builder.create()
+				.parent(parent)
+				.display(icon.asItem().getDefaultStack(),
+						Text.translatable(key + ".title"),
+						Text.translatable(key + ".description"),
+						null, frame, true, true, false)
 				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.FIRST_FALL.toString());
-
-		// Frequent Flyer — die 5 times (child of First Fall)
-		Advancement.Builder.create()
-				.parent(firstFall)
-				.display(
-						Items.TOTEM_OF_UNDYING.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.frequent_flyer.title"),
-						Text.translatable("advancements.revivegraves.frequent_flyer.description"),
-						null,
-						AdvancementFrame.GOAL,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.FREQUENT_FLYER.toString());
-
-		// Lingering Spirit — 30 min as ghost (child of First Fall)
-		AdvancementEntry lingeringSpirit = Advancement.Builder.create()
-				.parent(firstFall)
-				.display(
-						Items.SOUL_LANTERN.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.lingering_spirit.title"),
-						Text.translatable("advancements.revivegraves.lingering_spirit.description"),
-						null,
-						AdvancementFrame.GOAL,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.LINGERING_SPIRIT.toString());
-
-		// Eternal Haunting — 2 hours as ghost (child of Lingering Spirit)
-		Advancement.Builder.create()
-				.parent(lingeringSpirit)
-				.display(
-						Items.SOUL_CAMPFIRE.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.eternal_haunting.title"),
-						Text.translatable("advancements.revivegraves.eternal_haunting.description"),
-						null,
-						AdvancementFrame.CHALLENGE,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.ETERNAL_HAUNTING.toString());
-
-		// Helping Hand — revive another player (child of root)
-		AdvancementEntry helpingHand = Advancement.Builder.create()
-				.parent(root)
-				.display(
-						Items.GOLDEN_APPLE.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.helping_hand.title"),
-						Text.translatable("advancements.revivegraves.helping_hand.description"),
-						null,
-						AdvancementFrame.TASK,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.HELPING_HAND.toString());
-
-		// Medic! — revive 5 players (child of Helping Hand)
-		Advancement.Builder.create()
-				.parent(helpingHand)
-				.display(
-						Items.ENCHANTED_GOLDEN_APPLE.getDefaultStack(),
-						Text.translatable("advancements.revivegraves.medic.title"),
-						Text.translatable("advancements.revivegraves.medic.description"),
-						null,
-						AdvancementFrame.CHALLENGE,
-						true, true, false
-				)
-				.criterion("granted", new AdvancementCriterion<>(Criteria.IMPOSSIBLE, new ImpossibleCriterion.Conditions()))
-				.build(consumer, ModAdvancements.MEDIC.toString());
+				.build(consumer, id.toString());
 	}
 }

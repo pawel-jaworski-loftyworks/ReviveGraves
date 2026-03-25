@@ -8,7 +8,10 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.World;
 import de.programmierin.revivegraves.config.ModConfig;
 
 import java.util.EnumSet;
@@ -44,6 +47,11 @@ public class GhostChickenState extends PersistentState {
                         BlockPos.CODEC.fieldOf("pos").forGetter(GraveLocation::pos)
                 ).apply(instance, GraveLocation::new)
         );
+
+        public ServerWorld resolveWorld(MinecraftServer server) {
+            RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(dimension()));
+            return server.getWorld(dimKey);
+        }
     }
 
     /**
@@ -86,12 +94,9 @@ public class GhostChickenState extends PersistentState {
      * Converts internal state to a list of entries for codec serialization.
      */
     private List<GhostEntry> toEntryList() {
-        List<GhostEntry> entries = new ArrayList<>();
-        for (UUID uuid : ghostPlayers) {
-            GraveLocation loc = gravestoneLocations.get(uuid);
-            entries.add(new GhostEntry(uuid.toString(), Optional.ofNullable(loc)));
-        }
-        return entries;
+        return ghostPlayers.stream()
+                .map(uuid -> new GhostEntry(uuid.toString(), Optional.ofNullable(gravestoneLocations.get(uuid))))
+                .toList();
     }
 
     /**

@@ -9,11 +9,9 @@ import de.programmierin.revivegraves.ghost.GhostChickenState;
 import de.programmierin.revivegraves.item.ModItems;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.s2c.play.PositionFlag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -30,7 +28,6 @@ import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.EnumSet;
 import java.util.UUID;
 
 public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntityProvider {
@@ -108,16 +105,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             }
 
             ServerWorld serverWorld = (ServerWorld) world;
-            double x = pos.getX() + 0.5;
-            double y = pos.getY() + 1.0;
-            double z = pos.getZ() + 0.5;
-            dead.teleport(
-                    serverWorld,
-                    x, y, z,
-                    EnumSet.noneOf(PositionFlag.class),
-                    dead.getYaw(), dead.getPitch(),
-                    false
-            );
+            ReviveGraves.teleportToGrave(dead, serverWorld, pos);
 
             // Consume token after successful teleport
             if (main.getItem() == ModItems.REVIVE_TOKEN) {
@@ -148,7 +136,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
 
             serverWorld.spawnParticles(
                     ParticleTypes.TOTEM_OF_UNDYING,
-                    x, y, z,
+                    pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
                     30,
                     0.3, 0.5, 0.3,
                     0.0
@@ -163,15 +151,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
                     1f
             );
 
-            // Remove hologram
-            UUID holoId = gbe.getHologram();
-            if (holoId != null) {
-                Entity holo = serverWorld.getEntity(holoId);
-                if (holo != null) {
-                    holo.discard();
-                }
-            }
-
+            gbe.discardHologram(serverWorld);
             world.removeBlock(pos, false);
 
             // Track revive stats and grant advancements for the reviver
@@ -191,13 +171,7 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
     protected void onStateReplaced(BlockState state, ServerWorld world, BlockPos pos, boolean moved) {
         BlockEntity be = world.getBlockEntity(pos);
         if (be instanceof GravestoneBlockEntity gbe) {
-            UUID holoId = gbe.getHologram();
-            if (holoId != null) {
-                Entity holo = world.getEntity(holoId);
-                if (holo != null) {
-                    holo.discard();
-                }
-            }
+            gbe.discardHologram(world);
         }
         super.onStateReplaced(state, world, pos, moved);
     }

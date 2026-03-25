@@ -9,7 +9,6 @@
 		"ServerPlayNetworkHandlerMixin"
 	],
 	"client": [
-		"client.CameraMixin",
 		"client.EntityRenderManagerAccessor",
 		"client.GhostRaycastMixin",
 		"client.LivingEntityRendererMixin",

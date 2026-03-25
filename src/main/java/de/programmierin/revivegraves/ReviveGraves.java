@@ -31,8 +31,6 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
 import de.programmierin.revivegraves.ghost.GhostChickenState;
@@ -69,7 +67,6 @@ public class ReviveGraves implements ModInitializer {
 
 			if (!(raw instanceof ServerWorld world)) return;
 
-			// Store original game mode before changing to spectator
 			GameMode originalMode = player.interactionManager.getGameMode();
 
 			double px = player.getX(), pz = player.getZ();
@@ -115,9 +112,7 @@ public class ReviveGraves implements ModInitializer {
 			GhostChickenState ghostState = GhostChickenState.get(world.getServer());
 			GhostChickenState.GraveLocation existingGrave = ghostState.getGravestoneLocation(player.getUuid());
 			if (existingGrave != null) {
-				RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD,
-						Identifier.of(existingGrave.dimension()));
-				ServerWorld graveWorld = world.getServer().getWorld(dimKey);
+				ServerWorld graveWorld = existingGrave.resolveWorld(world.getServer());
 				if (graveWorld != null) {
 					graveWorld.removeBlock(existingGrave.pos(), false);
 				}
@@ -144,18 +139,9 @@ public class ReviveGraves implements ModInitializer {
 					if (ModConfig.INSTANCE.ghost.spawnAtGravestone) {
 						GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(newPlayer.getUuid());
 						if (graveLoc != null) {
-							RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
-							ServerWorld graveWorld = ((ServerWorld) newPlayer.getEntityWorld()).getServer().getWorld(dimKey);
+							ServerWorld graveWorld = graveLoc.resolveWorld(((ServerWorld) newPlayer.getEntityWorld()).getServer());
 							if (graveWorld != null) {
-								newPlayer.teleport(
-										graveWorld,
-										graveLoc.pos().getX() + 0.5,
-										graveLoc.pos().getY() + 1.0,
-										graveLoc.pos().getZ() + 0.5,
-										EnumSet.noneOf(PositionFlag.class),
-										newPlayer.getYaw(), newPlayer.getPitch(),
-										false
-								);
+								teleportToGrave(newPlayer, graveWorld, graveLoc.pos());
 							}
 						}
 					}
@@ -241,7 +227,6 @@ public class ReviveGraves implements ModInitializer {
 			return true;
 		});
 
-		// --- Task 7: Ghost tick handler (particles, sounds, void protection, item clear) ---
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
 			// Process pending advancement announcements (delayed from JOIN)
 			if (!pendingAnnouncementTick.isEmpty()) {
@@ -305,18 +290,9 @@ public class ReviveGraves implements ModInitializer {
 				if (ghost.getY() < ghost.getEntityWorld().getBottomY() - 10) {
 					GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(uuid);
 					if (graveLoc != null) {
-						RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
-						ServerWorld graveWorld = server.getWorld(dimKey);
+						ServerWorld graveWorld = graveLoc.resolveWorld(server);
 						if (graveWorld != null) {
-							ghost.teleport(
-									graveWorld,
-									graveLoc.pos().getX() + 0.5,
-									graveLoc.pos().getY() + 1.0,
-									graveLoc.pos().getZ() + 0.5,
-									EnumSet.noneOf(PositionFlag.class),
-									ghost.getYaw(), ghost.getPitch(),
-									false
-							);
+							teleportToGrave(ghost, graveWorld, graveLoc.pos());
 						}
 					}
 				}
@@ -326,8 +302,7 @@ public class ReviveGraves implements ModInitializer {
 				if (tick % 20 == 0 && tick - startTick < 100) {
 					GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(uuid);
 					if (graveLoc != null) {
-						RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
-						ServerWorld graveWorld = server.getWorld(dimKey);
+						ServerWorld graveWorld = graveLoc.resolveWorld(server);
 						if (graveWorld != null) {
 							BlockPos gravePos = graveLoc.pos();
 							BlockEntity be = graveWorld.getBlockEntity(gravePos);
@@ -343,8 +318,7 @@ public class ReviveGraves implements ModInitializer {
 				if (ModConfig.INSTANCE.gravestone.timerEnabled && tick % 20 == 0) {
 					GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(uuid);
 					if (graveLoc != null) {
-						RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
-						ServerWorld graveWorld = server.getWorld(dimKey);
+						ServerWorld graveWorld = graveLoc.resolveWorld(server);
 						if (graveWorld != null) {
 							BlockEntity timerBe = graveWorld.getBlockEntity(graveLoc.pos());
 							if (timerBe instanceof GravestoneBlockEntity timerGbe) {
@@ -355,11 +329,7 @@ public class ReviveGraves implements ModInitializer {
 
 									if (remainingSeconds <= 0) {
 										// Timer expired — remove gravestone + hologram, ghost stays ghost
-										UUID holoId = timerGbe.getHologram();
-										if (holoId != null) {
-											Entity holo = graveWorld.getEntity(holoId);
-											if (holo != null) holo.discard();
-										}
+										timerGbe.discardHologram(graveWorld);
 										graveWorld.removeBlock(graveLoc.pos(), false);
 										ghostState.setGravestoneExpired(uuid);
 										ghost.sendMessage(Text.translatable("message.revivegraves.gravestone_expired"), false);
@@ -389,11 +359,9 @@ public class ReviveGraves implements ModInitializer {
 					ModAdvancements.checkGhostTimeAdvancements(ghost, statsState);
 				}
 
-				// Item pickup is now blocked by ItemEntityMixin (prevents pickup at source)
 			}
 		});
 
-		// --- Task 8: Reconnect handling ---
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
 
@@ -438,8 +406,7 @@ public class ReviveGraves implements ModInitializer {
 			// Verify gravestone still exists (cross-dimension)
 			GhostChickenState.GraveLocation graveLoc = ghostState.getGravestoneLocation(player.getUuid());
 			if (graveLoc != null) {
-				RegistryKey<World> dimKey = RegistryKey.of(RegistryKeys.WORLD, Identifier.of(graveLoc.dimension()));
-				ServerWorld graveWorld = server.getWorld(dimKey);
+				ServerWorld graveWorld = graveLoc.resolveWorld(server);
 				if (graveWorld != null) {
 					graveWorld.getChunk(graveLoc.pos());
 					BlockEntity be = graveWorld.getBlockEntity(graveLoc.pos());
@@ -465,6 +432,12 @@ public class ReviveGraves implements ModInitializer {
 	/**
 	 * Removes tick tracking data for a ghost player (called on revive or cleanup).
 	 */
+	public static void teleportToGrave(ServerPlayerEntity player, ServerWorld graveWorld, BlockPos gravePos) {
+		player.teleport(graveWorld,
+				gravePos.getX() + 0.5, gravePos.getY() + 1.0, gravePos.getZ() + 0.5,
+				EnumSet.noneOf(PositionFlag.class), player.getYaw(), player.getPitch(), false);
+	}
+
 	public static void clearGhostTickData(UUID uuid) {
 		nextSoundTick.remove(uuid);
 		ghostStartTick.remove(uuid);
