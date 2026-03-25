@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://media.discordapp.net/attachments/364524046353694720/1370330277184016436/image.png?ex=68528585&is=68513405&hm=ce4857ae5671fe2788a7b36c1e9add26a88d41968e7a814e94aab98ad32ee6db&=&format=webp&quality=lossless&width=1392&height=783" alt="Logo" width="1000"/>
+<img src=".github/banner.png" alt="ReviveGraves Banner" width="1000"/>
 
 # ReviveGraves For Minecraft 1.21.9
 
@@ -11,26 +11,58 @@
 
 ## Features
 
-- 💀 **Gravestones on Death**
-  An indestructible gravestone spawns at your death location with a skull and your name above it.
+- **Gravestones on Death**
+  An indestructible gravestone spawns at your death location with a skull and your name displayed above it.
 
-- 🐔 **Ghost Chicken Mode**
-  Fallen players respawn as invisible ghost chickens in Adventure mode — other players see a chicken, while you experience the world from chicken eye level.
+- **Ghost Chicken Mode**
+  Fallen players respawn as invisible ghost chickens in Adventure mode — other players see a chicken, while you experience the world from chicken eye level with slow falling and reduced speed.
 
-- ❤️ **Revive Token**
+- **Revive Token**
   Teammates right-click the gravestone with a Revive Token to bring you back — you teleport to the gravestone, return to Survival mode, and the token is consumed.
 
-- 👻 **Ghost Mechanics**
+- **Ghost Mechanics**
   As a ghost chicken you can open doors and gates, but you can't interact with containers, armor stands, or other entities. Soul particles trail behind you and chicken sounds play at random intervals.
+
+- **Server-Side Config**
+  Fully configurable via `config/revivegraves.json` — loot drop chances, start tokens for new players, gravestone expiry timer, ghost speed, slow falling, particles, and more.
+
+- **Custom Advancements**
+  8 unique advancements in a dedicated mod tab — track your deaths, revives, and time spent as a ghost chicken.
+
+- **Loot Integration**
+  Revive Tokens appear naturally in End City treasure chests and Ominous Trial Vaults. New players receive starter tokens on first join (configurable).
 
 ---
 
 ## Installation
 
 1. Install [Fabric Loader](https://fabricmc.net/) and [Fabric API](https://modrinth.com/mod/fabric-api) for Minecraft 1.21.9
-2. Download the latest ReviveGraves JAR from [Releases](../../releases)
+2. Download the latest ReviveGraves JAR from [Modrinth](https://modrinth.com/mod/revivegraves) or [Releases](../../releases)
 3. Place the JAR in your `mods/` folder
 4. Launch the game
+
+---
+
+## Configuration
+
+After first launch, edit `config/revivegraves.json` on your server:
+
+| Section | Option | Default | Description |
+|---------|--------|---------|-------------|
+| **loot** | `enabled` | `true` | Master switch for loot table injection |
+| | `endCityChance` | `0.01` | Revive Token drop chance in End City chests (1%) |
+| | `ominousVaultChance` | `0.03` | Drop chance in Ominous Trial Vaults (3%) |
+| **startTokens** | `enabled` | `true` | Give new players tokens on first join |
+| | `amount` | `5` | Number of starter tokens |
+| **gravestone** | `timerEnabled` | `false` | Enable gravestone expiry timer |
+| | `timerSeconds` | `300` | Seconds until gravestone disappears |
+| **ghost** | `speedMultiplier` | `0.75` | Ghost speed (75% of normal) |
+| | `sprintEnabled` | `false` | Allow ghosts to sprint |
+| | `spawnAtGravestone` | `false` | Ghost spawns at gravestone instead of spawnpoint |
+| | `slowFallingEnabled` | `true` | Slow falling like a real chicken |
+| | `particlesEnabled` | `true` | Soul fire flame particles |
+
+All changes require a server restart.
 
 ---
 
@@ -40,6 +72,6 @@
 
 ---
 
-© MIT License
+MIT License
 
 If you have questions or feedback feel free to join my Discord: https://discord.gg/VDzC4v8MXV
