@@ -23,15 +23,6 @@
 - 👻 **Ghost Mechanics**
   As a ghost chicken you can open doors and gates, but you can't interact with containers, armor stands, or other entities. Soul particles trail behind you and chicken sounds play at random intervals.
 
-- 🌍 **Cross-Dimension Support**
-  Die in the Nether? Your teammate can still revive you from the Overworld gravestone — you'll be teleported across dimensions.
-
-- 🔄 **Reconnect Safe**
-  Disconnect as a ghost? When you reconnect, your ghost state is restored. If your gravestone was destroyed while offline, you respawn normally.
-
-- 🛡️ **Ghost Protection**
-  Ghosts are invulnerable, can't deal damage, can't pick up items, and are hidden from the tab list. Void protection teleports you back to your gravestone if you fall out of the world.
-
 ---
 
 ## Installation
@@ -40,12 +31,6 @@
 2. Download the latest ReviveGraves JAR from [Releases](../../releases)
 3. Place the JAR in your `mods/` folder
 4. Launch the game
-
----
-
-## Crafting
-
-**Revive Token** — crafted in a crafting table (see in-game recipe).
 
 ---
 
