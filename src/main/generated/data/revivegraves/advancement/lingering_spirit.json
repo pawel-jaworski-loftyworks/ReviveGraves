@@ -1,0 +1,27 @@
+{
+  "parent": "revivegraves:first_fall",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.lingering_spirit.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:soul_lantern"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.lingering_spirit.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

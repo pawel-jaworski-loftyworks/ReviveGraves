@@ -1,5 +1,7 @@
 package de.programmierin.revivegraves;
 
+import de.programmierin.revivegraves.advancement.ModAdvancements;
+import de.programmierin.revivegraves.advancement.PlayerStatsState;
 import de.programmierin.revivegraves.config.ModConfig;
 import de.programmierin.revivegraves.item.ModItemGroups;
 import de.programmierin.revivegraves.loot.ModLootTableModifiers;
@@ -48,6 +50,9 @@ public class ReviveGraves implements ModInitializer {
 	private static final Map<UUID, Integer> nextSoundTick = new HashMap<>();
 	// Tick when ghost was added (for time-limited gravestone sync)
 	private static final Map<UUID, Integer> ghostStartTick = new HashMap<>();
+	// Pending advancement announcements for JOIN-granted advancements (need delay for chat to work)
+	private static final Map<UUID, List<Identifier>> pendingAnnouncements = new HashMap<>();
+	private static final Map<UUID, Integer> pendingAnnouncementTick = new HashMap<>();
 
 	@Override
 	public void onInitialize() {
@@ -120,6 +125,11 @@ public class ReviveGraves implements ModInitializer {
 			String dimension = world.getRegistryKey().getValue().toString();
 			ghostState.addGhost(player.getUuid(), dimension, deathPos);
 			ghostStartTick.put(player.getUuid(), world.getServer().getTicks());
+
+			// Track death count and grant death advancements
+			PlayerStatsState statsState = PlayerStatsState.get(world.getServer());
+			statsState.incrementDeathCount(player.getUuid());
+			ModAdvancements.checkDeathAdvancements(player, statsState);
 		});
 
 		ServerPlayerEvents.AFTER_RESPAWN.register((ServerPlayerEntity oldPlayer,
@@ -233,7 +243,27 @@ public class ReviveGraves implements ModInitializer {
 
 		// --- Task 7: Ghost tick handler (particles, sounds, void protection, item clear) ---
 		ServerTickEvents.END_SERVER_TICK.register(server -> {
+			// Process pending advancement announcements (delayed from JOIN)
+			if (!pendingAnnouncementTick.isEmpty()) {
+				int tick = server.getTicks();
+				for (var it = pendingAnnouncementTick.entrySet().iterator(); it.hasNext(); ) {
+					var entry = it.next();
+					if (tick >= entry.getValue()) {
+						UUID uuid = entry.getKey();
+						ServerPlayerEntity player = server.getPlayerManager().getPlayer(uuid);
+						List<Identifier> advancements = pendingAnnouncements.remove(uuid);
+						it.remove();
+						if (player != null && advancements != null) {
+							for (Identifier advId : advancements) {
+								ModAdvancements.announceAdvancement(player, advId);
+							}
+						}
+					}
+				}
+			}
+
 			GhostChickenState ghostState = GhostChickenState.get(server);
+			PlayerStatsState statsState = PlayerStatsState.get(server);
 			int tick = server.getTicks();
 
 			for (UUID uuid : new java.util.ArrayList<>(ghostState.getGhostPlayerUuids())) {
@@ -353,6 +383,12 @@ public class ReviveGraves implements ModInitializer {
 					}
 				}
 
+				// Accumulate ghost time and check ghost time advancements (every second)
+				if (tick % 20 == 0) {
+					statsState.addGhostTicks(uuid, 20);
+					ModAdvancements.checkGhostTimeAdvancements(ghost, statsState);
+				}
+
 				// Item pickup is now blocked by ItemEntityMixin (prevents pickup at source)
 			}
 		});
@@ -360,29 +396,40 @@ public class ReviveGraves implements ModInitializer {
 		// --- Task 8: Reconnect handling ---
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();
+
+			// Grant root advancement (creates mod tab, idempotent)
+			ModAdvancements.grant(player, ModAdvancements.ROOT);
+
+			// Migrate old advancement marker: grant EMERGENCY_SUPPLIES if player had old first_join_tokens
+			Identifier oldAdvId = Identifier.of(ReviveGraves.MOD_ID, "first_join_tokens");
+			var oldAdvancement = server.getAdvancementLoader().get(oldAdvId);
+			if (oldAdvancement != null && player.getAdvancementTracker().getProgress(oldAdvancement).isDone()) {
+				ModAdvancements.grant(player, ModAdvancements.EMERGENCY_SUPPLIES);
+			}
+
 			// Start token grant for new players
+			List<Identifier> announcements = new ArrayList<>();
 			if (ModConfig.INSTANCE.startTokens.enabled) {
-				Identifier advId = Identifier.of(ReviveGraves.MOD_ID, "first_join_tokens");
-				var advancementEntry = server.getAdvancementLoader().get(advId);
-				if (advancementEntry != null) {
-					var progress = player.getAdvancementTracker().getProgress(advancementEntry);
-					if (!progress.isDone()) {
-						int amount = ModConfig.INSTANCE.startTokens.amount;
-						if (amount > 0) {
-							net.minecraft.item.ItemStack tokens = new net.minecraft.item.ItemStack(
-									ModItems.REVIVE_TOKEN, amount);
-							if (!player.getInventory().insertStack(tokens)) {
-								player.dropItem(tokens, false);
-							}
-							LOGGER.info("Granted {} start tokens to new player {}",
-									amount, player.getGameProfile().name());
-							player.sendMessage(Text.translatable("message.revivegraves.start_tokens_granted",
-									amount), false);
+				if (!ModAdvancements.isGranted(player, ModAdvancements.EMERGENCY_SUPPLIES)) {
+					int amount = ModConfig.INSTANCE.startTokens.amount;
+					if (amount > 0) {
+						net.minecraft.item.ItemStack tokens = new net.minecraft.item.ItemStack(
+								ModItems.REVIVE_TOKEN, amount);
+						if (!player.getInventory().insertStack(tokens)) {
+							player.dropItem(tokens, false);
 						}
-						// Always grant advancement marker (prevents future grants if amount changes)
-						player.getAdvancementTracker().grantCriterion(advancementEntry, "granted");
+						LOGGER.info("Granted {} start tokens to new player {}",
+								amount, player.getGameProfile().name());
 					}
+					ModAdvancements.grant(player, ModAdvancements.EMERGENCY_SUPPLIES);
+					announcements.add(ModAdvancements.EMERGENCY_SUPPLIES);
 				}
+			}
+
+			// Schedule announcements for 2 seconds later (chat not ready during JOIN)
+			if (!announcements.isEmpty()) {
+				pendingAnnouncements.put(player.getUuid(), announcements);
+				pendingAnnouncementTick.put(player.getUuid(), server.getTicks() + 40);
 			}
 
 			GhostChickenState ghostState = GhostChickenState.get(server);
@@ -405,6 +452,13 @@ public class ReviveGraves implements ModInitializer {
 			// Gravestone gone — clean up
 			ghostState.removeGhost(player.getUuid());
 			clearGhostTickData(player.getUuid());
+		});
+
+		// Clean up pending announcements on disconnect
+		ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
+			UUID uuid = handler.getPlayer().getUuid();
+			pendingAnnouncements.remove(uuid);
+			pendingAnnouncementTick.remove(uuid);
 		});
 	}
 

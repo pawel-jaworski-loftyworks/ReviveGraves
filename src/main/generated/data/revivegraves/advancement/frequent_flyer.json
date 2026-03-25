@@ -1,0 +1,27 @@
+{
+  "parent": "revivegraves:first_fall",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.frequent_flyer.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.frequent_flyer.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

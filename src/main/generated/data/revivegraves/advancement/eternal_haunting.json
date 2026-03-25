@@ -1,0 +1,27 @@
+{
+  "parent": "revivegraves:lingering_spirit",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.eternal_haunting.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:soul_campfire"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.eternal_haunting.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

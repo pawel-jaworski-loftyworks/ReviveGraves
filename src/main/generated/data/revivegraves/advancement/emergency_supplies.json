@@ -1,0 +1,26 @@
+{
+  "parent": "revivegraves:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.emergency_supplies.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "revivegraves:revive_token"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.emergency_supplies.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

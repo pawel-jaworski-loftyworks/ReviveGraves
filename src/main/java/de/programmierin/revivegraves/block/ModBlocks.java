@@ -4,6 +4,8 @@ import de.programmierin.revivegraves.ReviveGraves;
 import de.programmierin.revivegraves.block.custom.GravestoneBlock;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
@@ -26,6 +28,12 @@ public class ModBlocks {
         return Registry.register(Registries.BLOCK,
                 Identifier.of(ReviveGraves.MOD_ID, name), block);
     }
+
+    // Hidden BlockItem for advancement icon only — not in any creative tab, not craftable
+    public static final Item GRAVESTONE_ITEM = Registry.register(Registries.ITEM,
+            Identifier.of(ReviveGraves.MOD_ID, "gravestone"),
+            new BlockItem(GRAVESTONE, new Item.Settings()
+                    .registryKey(RegistryKey.of(RegistryKeys.ITEM, Identifier.of(ReviveGraves.MOD_ID, "gravestone")))));
 
     public static void registerModBlocks() {
         ReviveGraves.LOGGER.info("Registering Mod Blocks for {}", ReviveGraves.MOD_ID);

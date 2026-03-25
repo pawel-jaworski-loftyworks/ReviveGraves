@@ -2,6 +2,8 @@ package de.programmierin.revivegraves.block.custom;
 
 import com.mojang.serialization.MapCodec;
 import de.programmierin.revivegraves.ReviveGraves;
+import de.programmierin.revivegraves.advancement.ModAdvancements;
+import de.programmierin.revivegraves.advancement.PlayerStatsState;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import de.programmierin.revivegraves.ghost.GhostChickenState;
 import de.programmierin.revivegraves.item.ModItems;
@@ -59,7 +61,8 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
     @Nullable
     @Override
     public BlockState getPlacementState(ItemPlacementContext ctx) {
-        return this.getDefaultState().with(FACING, ctx.getHorizontalPlayerFacing().getOpposite());
+        // Prevent manual placement — gravestone is only created programmatically on death
+        return null;
     }
 
     @Override
@@ -170,6 +173,14 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             }
 
             world.removeBlock(pos, false);
+
+            // Track revive stats and grant advancements for the reviver
+            if (clicker instanceof ServerPlayerEntity reviver) {
+                PlayerStatsState statsState = PlayerStatsState.get(serverWorld.getServer());
+                statsState.incrementReviveCount(reviver.getUuid());
+                ModAdvancements.checkReviveAdvancements(reviver, statsState);
+            }
+
             return ActionResult.SUCCESS;
         }
 

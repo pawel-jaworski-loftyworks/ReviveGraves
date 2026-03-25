@@ -1,0 +1,27 @@
+{
+  "parent": "revivegraves:helping_hand",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.medic.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "count": 1,
+      "id": "minecraft:enchanted_golden_apple"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.medic.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

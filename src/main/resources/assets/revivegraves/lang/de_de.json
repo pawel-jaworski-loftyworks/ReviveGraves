@@ -7,5 +7,22 @@
   "message.revivegraves.ghost_chicken_active": "Du bist ein Geisterhühnchen! Finde einen Mitspieler und führe ihn zu deinem Grabstein.",
   "message.revivegraves.ghost_chicken_void": "Du bist in die Leere gefallen und wurdest zu deinem Grabstein teleportiert.",
   "message.revivegraves.start_tokens_granted": "Du hast %d Wiederbelebungsmünzen erhalten!",
-  "message.revivegraves.gravestone_expired": "Dein Grabstein ist zerfallen..."
+  "message.revivegraves.gravestone_expired": "Dein Grabstein ist zerfallen...",
+
+  "advancements.revivegraves.root.title": "ReviveGraves",
+  "advancements.revivegraves.root.description": "Kooperative Rettungsmechaniken",
+  "advancements.revivegraves.emergency_supplies.title": "Notfallvorrat",
+  "advancements.revivegraves.emergency_supplies.description": "Erhalte Start-Wiederbelebungsmünzen",
+  "advancements.revivegraves.first_fall.title": "Der erste Fall",
+  "advancements.revivegraves.first_fall.description": "Stirb zum ersten Mal",
+  "advancements.revivegraves.frequent_flyer.title": "Stammgast",
+  "advancements.revivegraves.frequent_flyer.description": "Stirb 5-mal",
+  "advancements.revivegraves.lingering_spirit.title": "Rastloser Geist",
+  "advancements.revivegraves.lingering_spirit.description": "Verbringe 30 Minuten als Geist",
+  "advancements.revivegraves.eternal_haunting.title": "Ewiger Spuk",
+  "advancements.revivegraves.eternal_haunting.description": "Verbringe 2 Stunden als Geist",
+  "advancements.revivegraves.helping_hand.title": "Helfende Hand",
+  "advancements.revivegraves.helping_hand.description": "Belebe einen anderen Spieler wieder",
+  "advancements.revivegraves.medic.title": "Sanitäter!",
+  "advancements.revivegraves.medic.description": "Belebe 5 Spieler wieder"
 }

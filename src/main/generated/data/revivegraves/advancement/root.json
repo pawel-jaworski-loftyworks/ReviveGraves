@@ -1,0 +1,28 @@
+{
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "revivegraves:gui/advancements/backgrounds/soul_sand",
+    "description": {
+      "translate": "advancements.revivegraves.root.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "revivegraves:gravestone"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.revivegraves.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}

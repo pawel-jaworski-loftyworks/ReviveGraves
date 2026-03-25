@@ -1,0 +1,26 @@
+{
+  "parent": "revivegraves:root",
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.revivegraves.helping_hand.description"
+    },
+    "icon": {
+      "count": 1,
+      "id": "minecraft:golden_apple"
+    },
+    "title": {
+      "translate": "advancements.revivegraves.helping_hand.title"
+    }
+  },
+  "requirements": [
+    [
+      "granted"
+    ]
+  ],
+  "sends_telemetry_event": true
+}
