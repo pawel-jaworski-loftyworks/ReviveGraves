@@ -10,7 +10,7 @@
 ## Features
 
 - **Gravestones on Death**
-  An indestructible gravestone spawns at your death location with a skull and your name displayed above it.
+  An indestructible gravestone spawns at your death location with a skull and your name displayed above it. The gravestone glows softly and firefly particles drift around it.
 
 - **Ghost Chicken Mode**
   Fallen players respawn as invisible ghost chickens in Adventure mode — other players see a chicken, while you experience the world from chicken eye level with slow falling and reduced speed.
@@ -56,6 +56,7 @@ After first launch, edit `config/revivegraves.json` on your server:
 | | `timerSeconds` | `300` | Seconds until gravestone disappears |
 | | `storeItems` | `true` | Store inventory in gravestone, return on revive |
 | | `storeXp` | `false` | Store XP in gravestone, return on revive |
+| | `fireflyParticlesEnabled` | `true` | Show firefly particles around gravestone |
 | **ghost** | `speedMultiplier` | `0.75` | Ghost speed (75% of normal) |
 | | `sprintEnabled` | `false` | Allow ghosts to sprint |
 | | `spawnAtGravestone` | `false` | Ghost spawns at gravestone instead of spawnpoint |
