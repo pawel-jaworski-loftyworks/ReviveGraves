@@ -86,6 +86,11 @@ public class ReviveGraves implements ModInitializer {
 				ModBlocks.GRAVESTONE.getDefaultState()
 					.with(HorizontalFacingBlock.FACING, player.getHorizontalFacing()),
 				3);
+			// Prevent void-fall after revive: place stone under gravestone if air below
+			BlockPos below = deathPos.down();
+			if (world.getBlockState(below).isAir()) {
+				world.setBlockState(below, net.minecraft.block.Blocks.STONE.getDefaultState(), 3);
+			}
 			BlockEntity be = world.getBlockEntity(deathPos);
 			if (be instanceof GravestoneBlockEntity gbe) {
 				gbe.setOwner(player.getUuid());
@@ -362,6 +367,24 @@ public class ReviveGraves implements ModInitializer {
 								graveWorld.updateListeners(gravePos, graveWorld.getBlockState(gravePos),
 										graveWorld.getBlockState(gravePos), 3);
 							}
+						}
+					}
+				}
+
+				// Firefly particles around gravestone every 10 ticks
+				if (ModConfig.INSTANCE.gravestone.fireflyParticlesEnabled && tick % 10 == 0) {
+					GhostChickenState.GraveLocation fireflyLoc = ghostState.getGravestoneLocation(uuid);
+					if (fireflyLoc != null) {
+						ServerWorld fireflyWorld = fireflyLoc.resolveWorld(server);
+						if (fireflyWorld != null) {
+							BlockPos gPos = fireflyLoc.pos();
+							fireflyWorld.spawnParticles(
+									ParticleTypes.FIREFLY,
+									gPos.getX() + 0.5, gPos.getY() + 0.5, gPos.getZ() + 0.5,
+									3,
+									0.6, 0.5, 0.6,
+									0.0
+							);
 						}
 					}
 				}

@@ -152,18 +152,27 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             serverWorld.getChunkManager().unloadEntity(dead);
             serverWorld.getChunkManager().loadEntity(dead);
 
+            // Revive particles: purple portal mist + white light points
             serverWorld.spawnParticles(
-                    ParticleTypes.TOTEM_OF_UNDYING,
+                    ParticleTypes.REVERSE_PORTAL,
                     pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
-                    30,
+                    25,
                     0.3, 0.5, 0.3,
-                    0.0
+                    0.05
+            );
+            serverWorld.spawnParticles(
+                    ParticleTypes.END_ROD,
+                    pos.getX() + 0.5, pos.getY() + 1.0, pos.getZ() + 0.5,
+                    12,
+                    0.2, 0.4, 0.2,
+                    0.02
             );
 
+            // Revive sound: deep resonant anchor tone
             serverWorld.playSound(
                     null,
                     pos,
-                    SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME,
+                    SoundEvents.BLOCK_RESPAWN_ANCHOR_SET_SPAWN,
                     SoundCategory.BLOCKS,
                     1f,
                     1f

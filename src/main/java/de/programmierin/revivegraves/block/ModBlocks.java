@@ -21,6 +21,7 @@ public class ModBlocks {
                             .strength(-1.0f, 3600000.0f)
                             .dropsNothing()
                             .nonOpaque()
+                            .luminance(state -> 6)
             )
     );
 

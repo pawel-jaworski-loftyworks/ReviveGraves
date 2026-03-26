@@ -39,6 +39,7 @@ public class ModConfig {
 		public int timerSeconds = 300;
 		public boolean storeItems = true;
 		public boolean storeXp = false;
+		public boolean fireflyParticlesEnabled = true;
 	}
 
 	public static class GhostConfig {
@@ -125,6 +126,7 @@ public class ModConfig {
 				                Items are returned on revive. When false, items drop on the ground as usual.
 				  storeXp      : Store player XP in gravestone on death (true/false, default false)
 				                XP is returned on revive. When false, XP drops as orbs as usual.
+				  fireflyParticlesEnabled : Show firefly particles around gravestone (true/false, default true)
 
 				GHOST
 				  speedMultiplier    : Ghost speed as multiplier of normal player speed (0.1-5.0, default 0.75 = 75%)
