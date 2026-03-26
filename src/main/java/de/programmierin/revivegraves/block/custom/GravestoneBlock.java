@@ -4,12 +4,14 @@ import com.mojang.serialization.MapCodec;
 import de.programmierin.revivegraves.ReviveGraves;
 import de.programmierin.revivegraves.advancement.ModAdvancements;
 import de.programmierin.revivegraves.advancement.PlayerStatsState;
+import de.programmierin.revivegraves.config.ModConfig;
 import de.programmierin.revivegraves.entity.GravestoneBlockEntity;
 import de.programmierin.revivegraves.ghost.GhostChickenState;
 import de.programmierin.revivegraves.item.ModItems;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.StackWithSlot;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleTypes;
@@ -128,6 +130,22 @@ public class GravestoneBlock extends HorizontalFacingBlock implements BlockEntit
             //    so the fresh spawn packet has the correct game mode
             GameMode originalMode = gbe.getOriginalGameMode();
             dead.changeGameMode(originalMode != null ? originalMode : GameMode.SURVIVAL);
+
+            // 4b. Restore stored inventory
+            if (ModConfig.INSTANCE.gravestone.storeItems && !gbe.getStoredItems().isEmpty()) {
+                for (StackWithSlot item : gbe.getStoredItems()) {
+                    if (item.slot() >= 0 && item.slot() < dead.getInventory().size()) {
+                        dead.getInventory().setStack(item.slot(), item.stack().copy());
+                    } else {
+                        dead.dropItem(item.stack().copy(), false);
+                    }
+                }
+            }
+
+            // 4c. Restore stored XP
+            if (ModConfig.INSTANCE.gravestone.storeXp && gbe.getStoredXp() > 0) {
+                dead.addExperience(gbe.getStoredXp());
+            }
 
             // 5. Force entity tracker refresh so other clients see a player again
             //    This sends fresh spawn + metadata packets with all current state

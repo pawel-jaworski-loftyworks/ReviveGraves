@@ -8,6 +8,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.inventory.StackWithSlot;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,6 +18,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameMode;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Function;
 
@@ -28,6 +31,8 @@ public class GravestoneBlockEntity extends BlockEntity {
     private String skinTextureValue;
     private String skinTextureSignature;
     private long creationTick = -1;
+    private List<StackWithSlot> storedItems = new ArrayList<>();
+    private int storedXp = 0;
 
     public GravestoneBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.GRAVESTONE, pos, state);
@@ -97,6 +102,24 @@ public class GravestoneBlockEntity extends BlockEntity {
         markDirty();
     }
 
+    public List<StackWithSlot> getStoredItems() {
+        return storedItems;
+    }
+
+    public void setStoredItems(List<StackWithSlot> items) {
+        this.storedItems = items != null ? new ArrayList<>(items) : new ArrayList<>();
+        markDirty();
+    }
+
+    public int getStoredXp() {
+        return storedXp;
+    }
+
+    public void setStoredXp(int xp) {
+        this.storedXp = xp;
+        markDirty();
+    }
+
     public void spawnHologram(ServerWorld world) {
         if (owner == null || hologram != null) return;
 
@@ -160,6 +183,16 @@ public class GravestoneBlockEntity extends BlockEntity {
         if (creationTick >= 0) {
             view.putString("CreationTick", String.valueOf(creationTick));
         }
+        if (!storedItems.isEmpty()) {
+            net.minecraft.storage.WriteView.ListAppender<StackWithSlot> list =
+                    view.getListAppender("StoredItems", StackWithSlot.CODEC);
+            for (StackWithSlot item : storedItems) {
+                list.add(item);
+            }
+        }
+        if (storedXp > 0) {
+            view.putInt("StoredXp", storedXp);
+        }
     }
 
     @Override
@@ -198,5 +231,12 @@ public class GravestoneBlockEntity extends BlockEntity {
                 ReviveGraves.LOGGER.warn("Invalid CreationTick in gravestone NBT: {}", t);
             }
         });
+        view.getOptionalTypedListView("StoredItems", StackWithSlot.CODEC).ifPresent(list -> {
+            this.storedItems = new ArrayList<>();
+            for (StackWithSlot item : list) {
+                this.storedItems.add(item);
+            }
+        });
+        this.storedXp = view.getInt("StoredXp", 0);
     }
 }

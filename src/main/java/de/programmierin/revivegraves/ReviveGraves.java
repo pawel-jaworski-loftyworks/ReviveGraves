@@ -28,6 +28,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
+import net.minecraft.inventory.StackWithSlot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -51,6 +53,9 @@ public class ReviveGraves implements ModInitializer {
 	// Pending advancement announcements for JOIN-granted advancements (need delay for chat to work)
 	private static final Map<UUID, List<Identifier>> pendingAnnouncements = new HashMap<>();
 	private static final Map<UUID, Integer> pendingAnnouncementTick = new HashMap<>();
+	// Temporary storage for inventory/XP between ALLOW_DEATH and AFTER_DEATH
+	private static final Map<UUID, List<StackWithSlot>> savedInventories = new HashMap<>();
+	private static final Map<UUID, Integer> savedXp = new HashMap<>();
 
 	@Override
 	public void onInitialize() {
@@ -92,6 +97,18 @@ public class ReviveGraves implements ModInitializer {
 						.properties().get("textures").stream().findFirst().orElse(null);
 				if (textures != null) {
 					gbe.setSkinTexture(textures.value(), textures.signature());
+				}
+
+				// Store saved inventory in gravestone
+				List<StackWithSlot> items = savedInventories.remove(player.getUuid());
+				if (items != null && !items.isEmpty()) {
+					gbe.setStoredItems(items);
+				}
+
+				// Store saved XP in gravestone
+				Integer xp = savedXp.remove(player.getUuid());
+				if (xp != null && xp > 0) {
+					gbe.setStoredXp(xp);
 				}
 
 				gbe.spawnHologram(world);
@@ -168,12 +185,34 @@ public class ReviveGraves implements ModInitializer {
 			return true;
 		});
 
-		// Suppress death for ghost players
+		// Suppress death for ghost players + save inventory/XP before death
 		ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
 			if (entity instanceof ServerPlayerEntity player) {
 				GhostChickenState ghostState = GhostChickenState.get(((ServerWorld) player.getEntityWorld()).getServer());
 				if (ghostState.isGhost(player.getUuid())) {
 					return false;
+				}
+
+				// Save inventory before death processing drops items
+				if (ModConfig.INSTANCE.gravestone.storeItems) {
+					List<StackWithSlot> items = new ArrayList<>();
+					var inv = player.getInventory();
+					for (int i = 0; i < inv.size(); i++) {
+						ItemStack stack = inv.getStack(i);
+						if (!stack.isEmpty()) {
+							items.add(new StackWithSlot(i, stack.copy()));
+						}
+					}
+					savedInventories.put(player.getUuid(), items);
+					inv.clear();
+				}
+
+				// Save XP before death processing drops orbs
+				if (ModConfig.INSTANCE.gravestone.storeXp) {
+					savedXp.put(player.getUuid(), player.totalExperience);
+					player.experienceLevel = 0;
+					player.experienceProgress = 0;
+					player.totalExperience = 0;
 				}
 			}
 			return true;

@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
 		"EntityTrackerEntryMixin",
+		"ExperienceOrbEntityMixin",
 		"ItemEntityMixin",
 		"PlayerListS2CPacketAccessor",
 		"ServerPlayNetworkHandlerMixin"

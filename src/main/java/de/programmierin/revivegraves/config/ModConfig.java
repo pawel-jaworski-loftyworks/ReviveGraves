@@ -37,6 +37,8 @@ public class ModConfig {
 	public static class GravestoneConfig {
 		public boolean timerEnabled = false;
 		public int timerSeconds = 300;
+		public boolean storeItems = true;
+		public boolean storeXp = false;
 	}
 
 	public static class GhostConfig {
@@ -119,6 +121,10 @@ public class ModConfig {
 				  timerEnabled : Enable gravestone expiry timer (true/false, default false)
 				  timerSeconds : Seconds until gravestone disappears (10-86400, default 300 = 5 min)
 				                When expired, ghost player remains permanently a chicken.
+				  storeItems   : Store player inventory in gravestone on death (true/false, default true)
+				                Items are returned on revive. When false, items drop on the ground as usual.
+				  storeXp      : Store player XP in gravestone on death (true/false, default false)
+				                XP is returned on revive. When false, XP drops as orbs as usual.
 
 				GHOST
 				  speedMultiplier    : Ghost speed as multiplier of normal player speed (0.1-5.0, default 0.75 = 75%)

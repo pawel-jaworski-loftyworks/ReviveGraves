@@ -1,9 +1,7 @@
 <p align="center">
 <img src=".github/banner.png" alt="ReviveGraves Banner" width="1000"/>
 
-# ReviveGraves For Minecraft 1.21.9
-
-*Keep your friends alive—even after death.*
+# ReviveGraves
 
 **ReviveGraves** (Fabric 1.21.9) adds cooperative rescue mechanics to your Minecraft server.
 
@@ -56,6 +54,8 @@ After first launch, edit `config/revivegraves.json` on your server:
 | | `amount` | `5` | Number of starter tokens |
 | **gravestone** | `timerEnabled` | `false` | Enable gravestone expiry timer |
 | | `timerSeconds` | `300` | Seconds until gravestone disappears |
+| | `storeItems` | `true` | Store inventory in gravestone, return on revive |
+| | `storeXp` | `false` | Store XP in gravestone, return on revive |
 | **ghost** | `speedMultiplier` | `0.75` | Ghost speed (75% of normal) |
 | | `sprintEnabled` | `false` | Allow ghosts to sprint |
 | | `spawnAtGravestone` | `false` | Ghost spawns at gravestone instead of spawnpoint |
