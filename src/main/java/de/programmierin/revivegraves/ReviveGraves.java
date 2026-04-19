@@ -519,14 +519,19 @@ public class ReviveGraves implements ModInitializer {
 	}
 
 	private static BlockPos findSafePlacement(ServerWorld world, BlockPos pos) {
-		if (world.getBlockState(pos).isReplaceable()) {
-			return pos;
+		// Search downward first to sit on solid ground (avoids floating above flowers etc.)
+		for (int dy = 0; dy >= -3; dy--) {
+			BlockPos candidate = pos.up(dy);
+			if (world.getBlockState(candidate).isReplaceable()
+					&& !world.getBlockState(candidate.down()).isReplaceable()) {
+				return candidate;
+			}
 		}
-		// Search upward for a replaceable block
-		for (int dy = 1; dy <= 5; dy++) {
-			BlockPos up = pos.up(dy);
-			if (world.getBlockState(up).isReplaceable()) {
-				return up;
+		// Search upward if no ground-level placement found
+		for (int dy = 0; dy <= 5; dy++) {
+			BlockPos candidate = pos.up(dy);
+			if (world.getBlockState(candidate).isReplaceable()) {
+				return candidate;
 			}
 		}
 		// Fallback: place at original position regardless
