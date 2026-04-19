@@ -21,7 +21,7 @@ import net.minecraft.world.GameMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.function.Function;
+import net.minecraft.entity.LoadedEntityProcessor;
 
 public class GravestoneBlockEntity extends BlockEntity {
     private UUID owner;
@@ -138,7 +138,7 @@ public class GravestoneBlockEntity extends BlockEntity {
         tag.putBoolean("NoBasePlate", true);
         tag.putBoolean("Marker", true);
 
-        Entity loaded = EntityType.loadEntityWithPassengers(tag, world, SpawnReason.TRIGGERED, Function.identity());
+        Entity loaded = EntityType.loadEntityWithPassengers(tag, world, SpawnReason.TRIGGERED, LoadedEntityProcessor.NOOP);
         if (!(loaded instanceof ArmorStandEntity stand)) return;
 
         stand.setCustomName(Text.literal(name));
